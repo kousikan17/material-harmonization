@@ -44,6 +44,7 @@ class ScoreBreakdown:
     dimension_score: float
     standard_score: float
     manufacturer_score: float
+    manufacturer_part_number_score: float
     function_score: float
     criticality_score: float
 
@@ -159,6 +160,10 @@ def manufacturer_score(a: str | None, b: str | None) -> float:
     return _direct_field_score(a, b)
 
 
+def manufacturer_part_number_score(a: str | None, b: str | None) -> float:
+    return _direct_field_score(a, b)
+
+
 def criticality_score(a: str | None, b: str | None) -> float:
     a, b = a or "UNSPECIFIED", b or "UNSPECIFIED"
     if a == "UNSPECIFIED" or b == "UNSPECIFIED":
@@ -180,7 +185,7 @@ def manufacturer_is_applicable(criticality_a: str | None, criticality_b: str | N
 # NOT_EQUIVALENT before this fix - see spec section 42 case 4). This is the
 # same redistribution mechanism already used for `manufacturer` above,
 # applied consistently to every optional field rather than only one.
-_OPTIONAL_FIELDS = ("grade", "dimension", "standard", "function", "manufacturer")
+_OPTIONAL_FIELDS = ("grade", "dimension", "standard", "function", "manufacturer", "manufacturer_part_number")
 
 
 def field_is_applicable(value_a: str | None, value_b: str | None) -> bool:
@@ -198,6 +203,7 @@ def compute_final_score(
     dimension_score: float,
     standard_score: float,
     manufacturer_score: float,
+    manufacturer_part_number_score: float,
     function_score: float,
     criticality_score: float,
     grade_applicable: bool = True,
@@ -205,6 +211,7 @@ def compute_final_score(
     standard_applicable: bool = True,
     function_applicable: bool = True,
     manufacturer_applicable: bool = False,
+    manufacturer_part_number_applicable: bool = False,
     weights: dict | None = None,
 ) -> ScoreBreakdown:
     weights = weights or get_effective_weights()
@@ -220,6 +227,7 @@ def compute_final_score(
         "dimension": dimension_score,
         "standard": standard_score,
         "manufacturer": manufacturer_score,
+        "manufacturer_part_number": manufacturer_part_number_score,
         "function": function_score,
         "criticality": criticality_score,
     }
@@ -229,6 +237,7 @@ def compute_final_score(
         "standard": standard_applicable,
         "function": function_applicable,
         "manufacturer": manufacturer_applicable,
+        "manufacturer_part_number": manufacturer_part_number_applicable,
     }
 
     inapplicable_weight = 0.0
@@ -255,6 +264,7 @@ def compute_final_score(
         dimension_score=dimension_score,
         standard_score=standard_score,
         manufacturer_score=manufacturer_score,
+        manufacturer_part_number_score=manufacturer_part_number_score,
         function_score=function_score,
         criticality_score=criticality_score,
     )

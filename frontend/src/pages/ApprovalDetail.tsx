@@ -62,10 +62,10 @@ export default function ApprovalDetailPage() {
         <CardHeader>
           <CardTitle>AI Assessment</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-slate-600">
-          Confidence: <span className="font-semibold text-slate-900">{mapping.confidence_score ? `${mapping.confidence_score.toFixed(1)}%` : "Manual mapping"}</span>{" "}
+        <CardContent className="text-sm text-slate-600 dark:text-slate-400">
+          Confidence: <span className="font-semibold text-slate-900 dark:text-slate-100">{mapping.confidence_score ? `${mapping.confidence_score.toFixed(1)}%` : "Manual mapping"}</span>{" "}
           <StatusBadge status={mapping.mapping_type} />
-          {mapping.reason && <p className="mt-1 text-slate-500">{mapping.reason}</p>}
+          {mapping.reason && <p className="mt-1 text-slate-500 dark:text-slate-400">{mapping.reason}</p>}
         </CardContent>
       </Card>
 
@@ -79,8 +79,8 @@ export default function ApprovalDetailPage() {
             <CardContent className="space-y-1 text-sm">
               <p className="font-semibold">{mapping.cpse_material.original_material_code}</p>
               <p>{mapping.cpse_material.original_description}</p>
-              <p className="text-slate-500">{mapping.cpse_material.technical_specification}</p>
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">{mapping.cpse_material.technical_specification}</p>
+              <p className="text-slate-500 dark:text-slate-400">
                 {mapping.cpse_material.classification} &middot; {mapping.cpse_material.uom} &middot; {mapping.cpse_material.cpse.code}
               </p>
             </CardContent>
@@ -94,8 +94,8 @@ export default function ApprovalDetailPage() {
                 <>
                   <p className="font-semibold">{mapping.matched_against.original_material_code}</p>
                   <p>{mapping.matched_against.original_description}</p>
-                  <p className="text-slate-500">{mapping.matched_against.technical_specification}</p>
-                  <p className="text-slate-500">
+                  <p className="text-slate-500 dark:text-slate-400">{mapping.matched_against.technical_specification}</p>
+                  <p className="text-slate-500 dark:text-slate-400">
                     {mapping.matched_against.classification} &middot; {mapping.matched_against.uom} &middot; {mapping.matched_against.cpse.code}
                   </p>
                 </>
@@ -130,11 +130,11 @@ export default function ApprovalDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {mapping.actions.map((action) => (
-              <div key={action.id} className="border-b border-slate-100 pb-2 last:border-0">
+              <div key={action.id} className="border-b border-slate-100 dark:border-navy-800 pb-2 last:border-0">
                 <p>
                   <span className="font-semibold">{action.actor_name}</span> &middot; {action.action.replace(/_/g, " ")}
                 </p>
-                {action.remarks && <p className="text-slate-500">"{action.remarks}"</p>}
+                {action.remarks && <p className="text-slate-500 dark:text-slate-400">"{action.remarks}"</p>}
                 <p className="text-xs text-slate-400">{new Date(action.created_at).toLocaleString()}</p>
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function ApprovalDetailPage() {
             <CardTitle>Expert Decision</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Approving will finalize (or reuse) the Common Material Code shown above as the official mapping.
             </p>
             <Textarea placeholder="Remarks (optional)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />

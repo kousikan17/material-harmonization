@@ -7,8 +7,11 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.procurement import ProcurementHistory
 from app.models.user import User
+from app.models.harmonization import CommonMaterial, CommonMaterialMapping
+from app.models.enums import MappingDecisionStatus
 from app.schemas.procurement import CollaborativeProcurementOpportunity, CPSEDemand, ProcurementRecordOut
 from app.services import procurement_service
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/procurement", tags=["Procurement"])
 
@@ -37,3 +40,5 @@ def list_opportunities(limit: int = 20, db: Session = Depends(get_db), current_u
         )
         for o in opportunities
     ]
+
+

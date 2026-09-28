@@ -11,9 +11,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-brand-600 text-white hover:bg-brand-700",
         destructive: "bg-danger-600 text-white hover:bg-danger-500",
-        outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-        ghost: "text-slate-700 hover:bg-slate-100",
+        outline: "border border-slate-300 dark:border-navy-700 dark:border-navy-700 bg-white dark:bg-navy-950 dark:bg-navy-950 text-slate-700 dark:text-slate-300 dark:text-slate-300 hover:bg-slate-50 dark:bg-navy-900 dark:bg-navy-900",
+        secondary: "bg-slate-100 dark:bg-navy-800 dark:bg-navy-800 text-slate-900 dark:text-slate-100 dark:text-slate-100 hover:bg-slate-200 dark:bg-navy-700 dark:bg-navy-700",
+        ghost: "text-slate-700 dark:text-slate-300 dark:text-slate-300 hover:bg-slate-100 dark:bg-navy-800 dark:bg-navy-800",
         success: "bg-success-600 text-white hover:bg-success-500",
         link: "text-brand-600 underline-offset-4 hover:underline",
       },

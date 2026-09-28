@@ -83,18 +83,18 @@ export default function AuditLogPage() {
           )}
           {data?.items.map((log) => (
             <TableRow key={log.id}>
-              <TableCell className="whitespace-nowrap text-xs text-slate-500">
+              <TableCell className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                 {new Date(log.created_at).toLocaleString()}
               </TableCell>
               <TableCell>
                 <Badge variant={log.actor_type === "AI_ENGINE" ? "brand" : "outline"}>{log.actor_name}</Badge>
               </TableCell>
               <TableCell className="font-medium">{log.action.replace(/_/g, " ")}</TableCell>
-              <TableCell className="text-xs text-slate-500">{log.entity_type}</TableCell>
-              <TableCell className="text-xs text-slate-500">
+              <TableCell className="text-xs text-slate-500 dark:text-slate-400">{log.entity_type}</TableCell>
+              <TableCell className="text-xs text-slate-500 dark:text-slate-400">
                 {(log.details as Record<string, unknown> | null)?.material_code as string | undefined ?? "—"}
               </TableCell>
-              <TableCell className="max-w-sm truncate text-xs text-slate-500">
+              <TableCell className="max-w-sm truncate text-xs text-slate-500 dark:text-slate-400">
                 {log.details ? JSON.stringify(log.details) : "—"}
               </TableCell>
             </TableRow>
@@ -102,7 +102,7 @@ export default function AuditLogPage() {
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
         <span>Page {page} of {totalPages}</span>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>

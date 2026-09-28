@@ -34,7 +34,7 @@ export function ApprovalTimeline({ autoApproved }: ApprovalTimelineProps) {
               {!isLast && <span className="w-px flex-1 bg-slate-300" />}
             </div>
             <div className="pb-5">
-              <p className="text-sm font-medium text-slate-800">{step.label}</p>
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{step.label}</p>
               {isAutoStage && (
                 <p className="text-xs text-slate-400">Auto-completed by AI decision engine (no manual step required)</p>
               )}

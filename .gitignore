@@ -1,11 +1,18 @@
 # Environment
 .env
+.env.*
+!.env.example
+
+# Logs
+*.log
 
 # Python
 __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
+.venv/
+venv/
 
 # Trained ML artifacts (see app/ml/train_xgb_ranker.py)
 backend/app/ml_models/
@@ -22,3 +29,23 @@ frontend/dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Build artifacts
+*.tsbuildinfo
+out.txt
+clean.sql
+test.json
+extracted_funcs.json
+
+# Scratch & test scripts
+frontend/scratch/
+frontend/test_*.cjs
+frontend/test_*.js
+backend/check_*.py
+backend/fix.py
+backend/upgrade.py
+backend/test_*.py
+extract_functions.py
+gen_pdf_xhtml.py
+generate_md.py
+generate_pdf.py

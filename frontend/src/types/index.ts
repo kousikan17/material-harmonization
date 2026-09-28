@@ -6,6 +6,28 @@ export interface Role {
   description?: string | null;
 }
 
+export interface CognateGroup {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+}
+
+export interface AdministrativeMinistry {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  cognate_groups: CognateGroup[];
+}
+
 export interface CPSEBrief {
   id: string;
   code: string;
@@ -13,7 +35,11 @@ export interface CPSEBrief {
 }
 
 export interface CPSE extends CPSEBrief {
-  sector?: string | null;
+  cognate_group_id?: string | null;
+  administrative_ministry_id?: string | null;
+  administrative_ministry?: string | null;
+  sector_name?: string | null;
+  cognate_group_name?: string | null;
   description?: string | null;
   logo_url?: string | null;
   is_active: boolean;
@@ -24,13 +50,18 @@ export interface CPSE extends CPSEBrief {
 
 export interface CPSEStats extends CPSE {
   total_materials: number;
+  active_materials: number;
+  inactive_materials: number;
+  new_materials: number;
   common_materials: number;
   unique_materials: number;
   duplicates: number;
   near_duplicates: number;
   functional_equivalents: number;
   pending_mappings: number;
+  approved_mappings: number;
   legacy_codes: number;
+  material_database_available: boolean;
 }
 
 export interface User {
@@ -77,6 +108,11 @@ export interface CPSEMaterial {
   packaging?: string | null;
   criticality: string;
   quantity?: number | null;
+  annual_demand_quantity?: number | null;
+  current_stock_quantity?: number | null;
+  required_quantity?: number | null;
+  unit_price?: number | null;
+  currency?: string | null;
   is_active: boolean;
   status: string;
   cpse: CPSEBrief;
@@ -286,6 +322,7 @@ export interface Notification {
 
 export interface DashboardStatistics {
   cpses_connected: number;
+  total_sectors: number;
   total_materials: number;
   common_material_codes: number;
   duplicates_identified: number;
@@ -297,6 +334,13 @@ export interface DashboardStatistics {
   technical_conflicts: number;
   new_materials_today: number;
   last_synchronization?: string | null;
+  todays_imports: {
+    cpse_name: string;
+    sector?: string | null;
+    upload_time: string;
+    total_records: number;
+    status: string;
+  }[];
 }
 
 export interface ChartPoint {
@@ -446,6 +490,14 @@ export interface CsvRowIssue {
   original_material_code?: string | null;
 }
 
+export interface CpseDistributionItem {
+  cpse_code: string;
+  cpse_name: string;
+  sector_name?: string | null;
+  cognate_group_name?: string | null;
+  material_count: number;
+}
+
 export interface CsvValidationResponse {
   filename: string;
   total_rows: number;
@@ -455,6 +507,8 @@ export interface CsvValidationResponse {
   file_errors: string[];
   invalid_rows: CsvRowIssue[];
   preview: Record<string, string>[];
+  normalizations?: Record<string, string>;
+  distribution?: CpseDistributionItem[];
 }
 
 export interface CsvImportRowResult {
@@ -484,6 +538,9 @@ export interface CsvImportResponse {
 export interface CsvImportHistoryItem {
   batch_id: string;
   filename: string;
+  filenames?: string[];
+  cpse_codes?: string[];
+  file_count?: number;
   imported_at: string;
   actor_name: string;
   total_rows: number;
@@ -517,6 +574,7 @@ export interface CollaborativeProcurementOpportunity {
   note: string;
 }
 
+
 export interface ProcurementRecord {
   id: string;
   cpse_material_id: string;
@@ -530,4 +588,112 @@ export interface ProcurementRecord {
   plant_location?: string | null;
   is_demo_data: boolean;
   created_at: string;
+}
+
+export interface ManualMaterialEntry {
+  cpse_code: string;
+  original_material_code: string;
+  original_description: string;
+  material_type: string;
+  material_grade?: string | null;
+  dimensions?: string | null;
+  technical_specification?: string | null;
+  uom: string;
+  manufacturer?: string | null;
+  standard?: string | null;
+  function?: string | null;
+  classification?: string | null;
+  packaging?: string | null;
+  criticality?: string | null;
+  quantity?: string | null;
+  annual_demand_quantity?: string | null;
+  current_stock_quantity?: string | null;
+  required_quantity?: string | null;
+  unit_price?: string | null;
+  currency?: string | null;
+}
+
+export interface ManualMaterialBatch {
+  entries: ManualMaterialEntry[];
+  cpse_id?: string | null;
+  group_id?: string | null;
+}
+
+export interface DataReadinessDashboard {
+  total_materials: number;
+  average_readiness_score: number;
+  materials_by_readiness_tier: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  missing_fields: {
+    uom: number;
+    classification: number;
+    technical_specification: number;
+    manufacturer_part_number: number;
+  };
+}
+
+export interface TaxonomyCategory {
+  id: string;
+  name: string;
+  parent_id?: string | null;
+  description?: string | null;
+}
+
+export interface TaxonomyAttribute {
+  id: string;
+  category_id: string;
+  name: string;
+  description?: string | null;
+  data_type: string;
+  is_required: boolean;
+}
+
+export interface EvaluationDataset {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface EvaluationLabel {
+  id: string;
+  dataset_id: string;
+  material_a_id: string;
+  material_b_id: string;
+  expert_label: string;
+}
+
+export interface EvaluationRun {
+  id: string;
+  dataset_id: string;
+  precision: number;
+  recall: number;
+  false_merge_rate: number;
+  notes?: string | null;
+}
+
+export interface PrecheckCandidate {
+  material_id: string;
+  common_code?: string | null;
+  description: string;
+  score: number;
+  decision: string;
+}
+
+export interface MaterialPrecheckRequest {
+  description: string;
+  specification?: string | null;
+  uom?: string | null;
+  classification?: string | null;
+  manufacturer?: string | null;
+  manufacturer_part_number?: string | null;
+  attributes_json?: Record<string, string>;
+}
+
+export interface MaterialPrecheckResponse {
+  readiness_score: number;
+  missing_critical_fields: string[];
+  candidates: PrecheckCandidate[];
 }

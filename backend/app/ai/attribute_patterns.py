@@ -15,6 +15,7 @@ THREAD_RE = re.compile(r"\bM(\d+(?:\.\d+)?)\b")
 DIMENSION_MM_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s?-?(MM|CM)\b")
 DIMENSION_INCH_RE = re.compile(r'(\d+(?:\.\d+)?)\s*(?:"|INCH|INCHES|IN)\b')
 STANDARD_RE = re.compile(r"\b(ASTM|ANSI|API|BS|DIN|IS|ISO)\s?-?([A-Z]?\d{1,4}[A-Z]?)\b")
+MPN_RE = re.compile(r"\b(?:PN|PART\s?NO|MODEL|MN|MPN)\s*[-:]?\s*([A-Z0-9\-]{4,20})\b", re.IGNORECASE)
 
 # label -> (pattern, normalizer). Shared by conflict detection (same-category
 # token disagreement) and attribute extraction (first match wins).
@@ -25,4 +26,5 @@ TECHNICAL_TOKEN_PATTERNS: list[tuple[str, "re.Pattern[str]", "callable"]] = [
     ("Thread/bolt size", THREAD_RE, lambda m: f"M{m.group(1)}"),
     ("Dimension", DIMENSION_MM_RE, lambda m: f"{m.group(1)}{m.group(2)}"),
     ("Dimension (inch)", DIMENSION_INCH_RE, lambda m: f'{m.group(1)}IN'),
+    ("Manufacturer Part Number", MPN_RE, lambda m: f"{m.group(1).upper()}"),
 ]

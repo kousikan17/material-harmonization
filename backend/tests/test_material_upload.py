@@ -192,3 +192,68 @@ def test_upload_template_download(client, seed_roles_and_cpse):
     assert response.status_code == 200
     assert "cpse_code" in response.text
     assert "original_material_code" in response.text
+
+def _manual_batch(cpse_id, entries):
+    return {
+        "cpse_id": str(cpse_id) if cpse_id else None,
+        "entries": entries
+    }
+
+def test_manual_upload_success(client, db_session, seed_roles_and_cpse):
+    headers = register_and_login(client, "iocl_manual1", "MATERIAL_EXPERT", cpse_code="IOCL")
+    entries = [
+        {
+            "cpse_code": "IOCL",
+            "original_material_code": "IOCL-MANUAL-01",
+            "original_description": "Manual Entry Pipe",
+            "material_type": "Pipe",
+            "uom": "METER"
+        }
+    ]
+    
+    validate_resp = client.post("/api/materials/upload/manual/validate", headers=headers, json=_manual_batch(None, entries))
+    assert validate_resp.status_code == 200
+    assert validate_resp.json()["is_importable"] is True
+    
+    confirm_resp = client.post("/api/materials/upload/manual/confirm", headers=headers, json=_manual_batch(None, entries))
+    assert confirm_resp.status_code == 200
+    assert confirm_resp.json()["created"] == 1
+    
+    material = db_session.query(CPSEMaterial).filter(CPSEMaterial.original_material_code == "IOCL-MANUAL-01").first()
+    assert material is not None
+    assert material.is_demo_data is False
+
+def test_manual_upload_missing_fields(client, seed_roles_and_cpse):
+    headers = register_and_login(client, "iocl_manual2", "MATERIAL_EXPERT", cpse_code="IOCL")
+    entries = [
+        {
+            "cpse_code": "IOCL",
+            "original_material_code": "IOCL-MANUAL-02",
+            # missing original_description
+            "material_type": "Pipe",
+            "uom": "METER"
+        }
+    ]
+    
+    validate_resp = client.post("/api/materials/upload/manual/validate", headers=headers, json=_manual_batch(None, entries))
+    assert validate_resp.status_code == 422 # Pydantic validation catches this
+
+def test_manual_upload_unauthorized_cpse(client, db_session, seed_roles_and_cpse):
+    from tests.conftest import create_cpse
+    create_cpse(db_session, "BPCL", "Bharat Petroleum Corporation Limited")
+    headers = register_and_login(client, "iocl_manual3", "MATERIAL_EXPERT", cpse_code="IOCL")
+    entries = [
+        {
+            "cpse_code": "BPCL",
+            "original_material_code": "BPCL-MANUAL-01",
+            "original_description": "Manual Entry Pipe",
+            "material_type": "Pipe",
+            "uom": "METER"
+        }
+    ]
+    
+    validate_resp = client.post("/api/materials/upload/manual/validate", headers=headers, json=_manual_batch(None, entries))
+    assert validate_resp.status_code == 200
+    body = validate_resp.json()
+    assert body["invalid_count"] == 1
+    assert "not authorized" in body["invalid_rows"][0]["errors"][0]

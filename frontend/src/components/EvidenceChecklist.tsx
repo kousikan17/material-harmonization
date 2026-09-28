@@ -22,9 +22,9 @@ export function EvidenceChecklist({ items }: { items: EvidenceItem[] }) {
               ) : (
                 <X className="h-4 w-4 shrink-0 text-danger-600" />
               )}
-              <span className="text-slate-700">{item.label}</span>
+              <span className="text-slate-700 dark:text-slate-300">{item.label}</span>
             </span>
-            <span className="tabular-nums text-xs font-medium text-slate-500">{(item.score as number).toFixed(1)}%</span>
+            <span className="tabular-nums text-xs font-medium text-slate-500 dark:text-slate-400">{(item.score as number).toFixed(1)}%</span>
           </div>
         );
       })}

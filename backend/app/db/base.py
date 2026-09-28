@@ -9,6 +9,8 @@ from app.db.base_class import Base, TimestampMixin, UUIDMixin  # noqa: F401
 
 from app.models.user import Role, User  # noqa: E402,F401
 from app.models.cpse import CPSE  # noqa: E402,F401
+from app.models.import_batch import ImportBatch  # noqa: E402,F401
+from app.models.cpse_import_batch import CPSEImportBatch  # noqa: E402,F401
 from app.models.material import (  # noqa: E402,F401
     CPSEMaterial,
     MaterialAttribute,
@@ -22,3 +24,6 @@ from app.models.source_connection import SourceConnection, SyncHistory  # noqa: 
 from app.models.audit import AuditLog  # noqa: E402,F401
 from app.models.notification import Notification  # noqa: E402,F401
 from app.models.settings import SystemSetting  # noqa: E402,F401
+from app.models.taxonomy import TaxonomyCategory, AttributeDefinition  # noqa: E402,F401
+from app.models.evaluation import EvaluationDataset, EvaluationLabel, EvaluationRun  # noqa: E402,F401
+from app.models.erp_adapter import ERPAdapterConfig  # noqa: E402,F401

@@ -67,8 +67,8 @@ export default function CommonMaterialMaster() {
         <Card>
           <CardContent className="flex flex-wrap items-center gap-6 py-4 text-sm">
             <span>
-              <span className="font-bold text-slate-900">{scanStatus?.completed ?? 0}</span> /{" "}
-              <span className="text-slate-500">{scanStatus?.total ?? scanMaterialIds.length}</span> materials analyzed
+              <span className="font-bold text-slate-900 dark:text-slate-100">{scanStatus?.completed ?? 0}</span> /{" "}
+              <span className="text-slate-500 dark:text-slate-400">{scanStatus?.total ?? scanMaterialIds.length}</span> materials analyzed
             </span>
             <span className={scanDone ? "font-medium text-success-600" : "font-medium text-brand-600"}>
               {scanDone ? "Scan complete" : "Processing..."}
@@ -126,7 +126,7 @@ export default function CommonMaterialMaster() {
               <TableCell>
                 <StatusBadge status={code.status} />
               </TableCell>
-              <TableCell className="text-xs text-slate-500">{formatDate(code.created_at)}</TableCell>
+              <TableCell className="text-xs text-slate-500 dark:text-slate-400">{formatDate(code.created_at)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

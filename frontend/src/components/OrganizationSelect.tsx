@@ -16,7 +16,7 @@ interface OrganizationSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSe
  */
 export const OrganizationSelect = React.forwardRef<HTMLSelectElement, OrganizationSelectProps>(
   ({ includeAllOption = false, includeInactive = true, ...props }, ref) => {
-    const { data, isLoading } = useQuery({ queryKey: ["cpse"], queryFn: listCPSE });
+    const { data, isLoading } = useQuery({ queryKey: ["cpse"], queryFn: () => listCPSE() });
     const options = (data ?? []).filter((org) => includeInactive || org.is_active);
 
     return (

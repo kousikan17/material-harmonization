@@ -17,12 +17,14 @@ from sqlalchemy.orm import Session
 from app.connectors.base import CanonicalMaterialRecord
 from app.models.enums import MappingDecisionStatus, MaterialStatus
 from app.models.material import CPSEMaterial
-from app.services import attribute_extraction, normalization
+from app.services import attribute_extraction, normalization, readiness_service
 from app.services.audit_service import log_action
 
 TRACKED_FIELDS = (
     "original_description", "material_type", "technical_specification", "uom", "manufacturer",
     "standard", "function", "classification", "packaging", "criticality", "quantity", "is_active",
+    "annual_demand_quantity", "current_stock_quantity", "required_quantity", "unit_price", "currency",
+    "manufacturer_part_number"
 )
 
 
@@ -33,10 +35,12 @@ def apply_extracted_and_normalized_fields(material: CPSEMaterial, record: Canoni
         material_grade=record.material_grade,
         dimensions=record.dimensions,
         standard=record.standard,
+        manufacturer_part_number=record.manufacturer_part_number,
     )
     material.material_grade = record.material_grade or extracted.get("material_grade")
     material.dimensions = record.dimensions or extracted.get("dimensions")
     material.standard = record.standard or extracted.get("standard")
+    material.manufacturer_part_number = record.manufacturer_part_number or extracted.get("manufacturer_part_number")
 
     material.normalized_description = normalization.normalize_description(record.original_description)
     material.normalized_specification = normalization.normalize_specification(record.technical_specification)
@@ -58,6 +62,12 @@ def _incoming_fields(record: CanonicalMaterialRecord) -> dict:
         "criticality": record.criticality or "UNSPECIFIED",
         "quantity": record.quantity,
         "is_active": record.is_active,
+        "annual_demand_quantity": record.annual_demand_quantity,
+        "current_stock_quantity": record.current_stock_quantity,
+        "required_quantity": record.required_quantity,
+        "unit_price": record.unit_price,
+        "currency": record.currency,
+        "manufacturer_part_number": record.manufacturer_part_number,
     }
 
 
@@ -85,6 +95,7 @@ def upsert_cpse_material(
     created_action: str = "MATERIAL_SYNCED_CREATED",
     updated_action: str = "MATERIAL_SYNCED_UPDATED",
     log_details_extra: dict | None = None,
+    commit: bool = True,
 ) -> tuple[str, CPSEMaterial | None]:
     """
     Idempotent upsert keyed on (cpse_id, original_material_code) - spec
@@ -107,12 +118,18 @@ def upsert_cpse_material(
             technical_specification=record.technical_specification,
             uom=record.uom,
             manufacturer=record.manufacturer,
+            manufacturer_part_number=record.manufacturer_part_number,
             standard=record.standard,
             function=record.function,
             classification=record.classification or record.material_type,
             packaging=record.packaging,
             criticality=record.criticality or "UNSPECIFIED",
             quantity=record.quantity,
+            annual_demand_quantity=record.annual_demand_quantity,
+            current_stock_quantity=record.current_stock_quantity,
+            required_quantity=record.required_quantity,
+            unit_price=record.unit_price,
+            currency=record.currency,
             is_active=record.is_active,
             status=MaterialStatus.PENDING.value,
             source_created_at=record.source_created_at,
@@ -123,9 +140,25 @@ def upsert_cpse_material(
             is_demo_data=is_demo_data,
         )
         apply_extracted_and_normalized_fields(material, record)
+        
+        # Calculate readiness score
+        material_dict = {
+            "original_description": material.original_description,
+            "uom": material.uom,
+            "classification": material.classification,
+            "technical_specification": material.technical_specification,
+            "manufacturer": material.manufacturer,
+            "manufacturer_part_number": material.manufacturer_part_number,
+            "attributes_json": material.attributes_json
+        }
+        readiness_scores = readiness_service.score_material_readiness(material_dict)
+        for k, v in readiness_scores.items():
+            setattr(material, k, v)
+            
         db.add(material)
         db.flush()
-        db.commit()
+        if commit:
+            db.commit()
         log_action(
             db,
             action=created_action,
@@ -144,7 +177,8 @@ def upsert_cpse_material(
         existing.last_synced_at = now
         if sync_history_id is not None:
             existing.sync_history_id = sync_history_id
-        db.commit()
+        if commit:
+            db.commit()
         return "skipped", None
 
     for f in TRACKED_FIELDS:
@@ -156,6 +190,20 @@ def upsert_cpse_material(
     if sync_history_id is not None:
         existing.sync_history_id = sync_history_id
     apply_extracted_and_normalized_fields(existing, record)
+    
+    # Recalculate readiness score
+    material_dict = {
+        "original_description": existing.original_description,
+        "uom": existing.uom,
+        "classification": existing.classification,
+        "technical_specification": existing.technical_specification,
+        "manufacturer": existing.manufacturer,
+        "manufacturer_part_number": existing.manufacturer_part_number,
+        "attributes_json": existing.attributes_json
+    }
+    readiness_scores = readiness_service.score_material_readiness(material_dict)
+    for k, v in readiness_scores.items():
+        setattr(existing, k, v)
 
     has_approved_mapping = any(
         m.decision_status in (MappingDecisionStatus.APPROVED.value, MappingDecisionStatus.EDITED_AND_APPROVED.value)
@@ -166,7 +214,8 @@ def upsert_cpse_material(
         # never be silently reassigned. Update the material's own content
         # (above) but do NOT re-run the AI pipeline on it - flag it visibly
         # for manual re-evaluation instead.
-        db.commit()
+        if commit:
+            db.commit()
         log_action(
             db,
             action="MATERIAL_CHANGED_AFTER_APPROVAL",
@@ -180,7 +229,8 @@ def upsert_cpse_material(
         return "updated", None
 
     existing.status = MaterialStatus.PENDING.value
-    db.commit()
+    if commit:
+        db.commit()
     log_action(
         db,
         action=updated_action,

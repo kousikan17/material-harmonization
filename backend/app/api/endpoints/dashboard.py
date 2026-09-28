@@ -7,13 +7,14 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
-from app.models.cpse import CPSE
+from app.models.cpse import CPSE, Sector
 from app.models.enums import MappingDecisionStatus, MappingType
 from app.models.harmonization import CommonMaterial, CommonMaterialMapping
 from app.models.material import CPSEMaterial
 from app.models.source_connection import SourceConnection
 from app.models.user import User
-from app.schemas.dashboard import ChartPoint, DashboardStatistics, DashboardTrends
+from app.models.import_batch import ImportBatch
+from app.schemas.dashboard import ChartPoint, DashboardStatistics, DashboardTrends, TodaysImport
 from app.services.duplicate_service import count_duplicate_materials
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -40,6 +41,7 @@ def _require_central_user(current_user: User) -> None:
 def get_statistics(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     _require_central_user(current_user)
     cpses_connected = db.query(func.count(CPSE.id)).filter(CPSE.is_active.is_(True)).scalar() or 0
+    total_sectors = db.query(func.count(Sector.id)).filter(Sector.is_active.is_(True)).scalar() or 0
     total_materials = db.query(func.count(CPSEMaterial.id)).scalar() or 0
     common_material_codes = db.query(func.count(CommonMaterial.id)).scalar() or 0
 
@@ -87,8 +89,23 @@ def get_statistics(db: Session = Depends(get_db), current_user: User = Depends(g
     )
     last_synchronization = db.query(func.max(SourceConnection.last_successful_sync)).scalar()
 
+    # Get Today's Imports
+    today_date = datetime.now(timezone.utc).date()
+    imports_today = db.query(ImportBatch).filter(ImportBatch.upload_date == today_date).order_by(ImportBatch.upload_time.desc()).limit(10).all()
+    todays_imports = [
+        TodaysImport(
+            cpse_name=ib.cpse.name if ib.cpse else "Unknown",
+            sector=ib.sector,
+            upload_time=ib.upload_time,
+            total_records=ib.total_records,
+            status=ib.status
+        )
+        for ib in imports_today
+    ]
+
     return DashboardStatistics(
         cpses_connected=cpses_connected,
+        total_sectors=total_sectors,
         total_materials=total_materials,
         common_material_codes=common_material_codes,
         duplicates_identified=duplicates_identified,
@@ -100,6 +117,7 @@ def get_statistics(db: Session = Depends(get_db), current_user: User = Depends(g
         technical_conflicts=technical_conflicts,
         new_materials_today=new_materials_today,
         last_synchronization=last_synchronization,
+        todays_imports=todays_imports,
     )
 
 

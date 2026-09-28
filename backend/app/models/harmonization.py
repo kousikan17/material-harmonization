@@ -30,12 +30,15 @@ class CommonMaterial(Base, UUIDMixin, TimestampMixin):
     material_grade: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     dimensions: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     standardized_uom: Mapped[str] = mapped_column(String(50), nullable=False)
+    manufacturer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    manufacturer_part_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     standard: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     function: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     criticality: Mapped[str] = mapped_column(String(30), nullable=False, default="UNSPECIFIED")
 
     classification: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     classification_path: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    attributes_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     # Lifecycle status (spec section 13) - distinct from any single mapping's
     # decision_status, which lives on CommonMaterialMapping.
@@ -49,6 +52,10 @@ class CommonMaterial(Base, UUIDMixin, TimestampMixin):
     created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
+    approved_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     mappings: Mapped[list["CommonMaterialMapping"]] = relationship(back_populates="common_material")
 

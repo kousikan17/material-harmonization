@@ -23,6 +23,7 @@ CANONICAL_FIELDS = REQUIRED_CANONICAL_FIELDS + (
     "dimensions",
     "technical_specification",
     "manufacturer",
+    "manufacturer_part_number",
     "standard",
     "function",
     "classification",
@@ -32,6 +33,11 @@ CANONICAL_FIELDS = REQUIRED_CANONICAL_FIELDS + (
     "is_active",
     "source_created_at",
     "source_updated_at",
+    "annual_demand_quantity",
+    "current_stock_quantity",
+    "required_quantity",
+    "unit_price",
+    "currency",
 )
 
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -64,6 +70,7 @@ class CanonicalMaterialRecord(BaseModel):
     dimensions: Optional[str] = None
     technical_specification: Optional[str] = None
     manufacturer: Optional[str] = None
+    manufacturer_part_number: Optional[str] = None
     standard: Optional[str] = None
     function: Optional[str] = None
     classification: Optional[str] = None
@@ -73,6 +80,13 @@ class CanonicalMaterialRecord(BaseModel):
     is_active: bool = True
     source_created_at: Optional[datetime] = None
     source_updated_at: Optional[datetime] = None
+
+    # Demand & Procurement Opportunity Fields
+    annual_demand_quantity: Optional[float] = None
+    current_stock_quantity: Optional[float] = None
+    required_quantity: Optional[float] = None
+    unit_price: Optional[float] = None
+    currency: Optional[str] = None
 
 
 class CanonicalRecordPage(BaseModel):

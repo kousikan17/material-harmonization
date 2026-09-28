@@ -42,3 +42,4 @@ class CollaborativeProcurementOpportunity(BaseModel):
     uom: Optional[str] = None
     includes_demo_data: bool
     note: str = "Estimated opportunity - potential procurement aggregation, not a realized saving."
+

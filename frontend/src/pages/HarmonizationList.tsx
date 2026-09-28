@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Clock, Layers } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import { KpiCard } from "@/components/KpiCard";
-import { OrganizationSelect } from "@/components/OrganizationSelect";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -46,15 +45,18 @@ export default function HarmonizationList() {
   const view = viewFromPath(location.pathname);
   const meta = VIEW_META[view];
 
+  const [searchParams] = useSearchParams();
+  const companyIdsParam = searchParams.get("company_ids");
+  const companyIds = companyIdsParam ? companyIdsParam.split(",") : undefined;
+
   const [q, setQ] = React.useState("");
-  const [cpseId, setCpseId] = React.useState("");
   const [page, setPage] = React.useState(1);
   const pageSize = 15;
   const debouncedQ = useDebounce(q);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["harmonization", view, { q: debouncedQ, cpseId, page }],
-    queryFn: () => listHarmonizationView(view, { q: debouncedQ || undefined, cpse_id: cpseId || undefined, page, page_size: pageSize }),
+    queryKey: ["harmonization", view, { q: debouncedQ, companyIds, page }],
+    queryFn: () => listHarmonizationView(view, { q: debouncedQ || undefined, company_ids: companyIds, page, page_size: pageSize }),
   });
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
@@ -79,15 +81,6 @@ export default function HarmonizationList() {
             setPage(1);
           }}
           className="max-w-xs"
-        />
-        <OrganizationSelect
-          includeAllOption
-          value={cpseId}
-          onChange={(e) => {
-            setCpseId(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-[220px]"
         />
       </div>
 
@@ -152,7 +145,7 @@ export default function HarmonizationList() {
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
         <span>
           Page {page} of {totalPages}
         </span>

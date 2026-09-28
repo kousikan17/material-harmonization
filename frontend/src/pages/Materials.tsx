@@ -98,25 +98,28 @@ export default function Materials() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">Sl.No.</TableHead>
-            <TableHead>Original Material Code</TableHead>
+            <TableHead>Material Code</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Classification</TableHead>
-            <TableHead>UOM</TableHead>
             <TableHead>CPSE</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Grade</TableHead>
+            <TableHead>Dimensions</TableHead>
+            <TableHead>UOM</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Last Updated</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-slate-400">
+              <TableCell colSpan={10} className="text-center text-slate-400">
                 Loading...
               </TableCell>
             </TableRow>
           )}
           {!isLoading && (data?.items.length ?? 0) === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-slate-400">
+              <TableCell colSpan={10} className="text-center text-slate-400">
                 No materials found. Materials only appear here once a CPSE's data has been synchronized.
               </TableCell>
             </TableRow>
@@ -129,19 +132,22 @@ export default function Materials() {
                   {material.original_material_code}
                 </Link>
               </TableCell>
-              <TableCell className="max-w-xs truncate">{material.original_description}</TableCell>
-              <TableCell>{material.classification}</TableCell>
-              <TableCell>{material.uom}</TableCell>
+              <TableCell className="max-w-xs truncate" title={material.original_description}>{material.original_description}</TableCell>
               <TableCell>{material.cpse.code}</TableCell>
+              <TableCell>{material.classification || "—"}</TableCell>
+              <TableCell>{material.material_grade || "—"}</TableCell>
+              <TableCell>{material.dimensions || "—"}</TableCell>
+              <TableCell>{material.uom}</TableCell>
               <TableCell>
                 <StatusBadge status={material.status} />
               </TableCell>
+              <TableCell>{new Date(material.updated_at).toLocaleDateString()}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
         <span>
           Page {page} of {totalPages}
         </span>

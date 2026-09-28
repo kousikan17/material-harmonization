@@ -55,6 +55,7 @@ REQUIRED_COLUMNS = (
     "technical_specification",
     "uom",
     "manufacturer",
+    "manufacturer_part_number",
     "standard",
     "function",
     "classification",
@@ -62,8 +63,31 @@ REQUIRED_COLUMNS = (
     "criticality",
     "quantity",
 )
-_REQUIRED_NON_EMPTY = ("cpse_code", "original_material_code", "original_description", "material_type", "uom")
+OPTIONAL_DEMAND_COLUMNS = (
+    "annual_demand_quantity",
+    "current_stock_quantity",
+    "required_quantity",
+    "unit_price",
+    "currency",
+)
+_ALLOWED_COLUMNS = REQUIRED_COLUMNS + OPTIONAL_DEMAND_COLUMNS
+_REQUIRED_NON_EMPTY = ("original_material_code", "original_description", "material_type", "uom")
 _VALID_CRITICALITY = {c.value for c in Criticality}
+
+_CRITICALITY_MAP = {
+    "CRITICAL": "CRITICAL",
+    "HIGH": "CRITICAL",
+    "NORMAL": "NORMAL",
+    "MEDIUM": "NORMAL",
+    "NON_CRITICAL": "NON_CRITICAL",
+    "NON-CRITICAL": "NON_CRITICAL",
+    "LOW": "NON_CRITICAL",
+    "UNSPECIFIED": "UNSPECIFIED",
+    "UNKNOWN": "UNSPECIFIED",
+    "N/A": "UNSPECIFIED",
+    "NA": "UNSPECIFIED",
+    "": "UNSPECIFIED",
+}
 
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB - a material master file, not a bulk data lake dump
 MAX_ROWS = 5000
@@ -89,6 +113,8 @@ class CsvValidationResult:
     total_rows: int
     rows: list[RowResult]
     file_errors: list[str]
+    normalizations: dict[str, str] = field(default_factory=dict)
+    distribution: list[dict] = field(default_factory=list)
 
     @property
     def valid_rows(self) -> list[RowResult]:
@@ -101,6 +127,7 @@ class CsvValidationResult:
     @property
     def is_importable(self) -> bool:
         return not self.file_errors and len(self.valid_rows) > 0
+
 
 
 class CsvImportError(Exception):
@@ -163,14 +190,20 @@ def _parse_rows(filename: str, raw_bytes: bytes) -> tuple[list[str], list[dict]]
     return _parse_csv_rows(raw_bytes)
 
 
-def _parse_criticality(value: str) -> tuple[str | None, str | None]:
+def _parse_criticality(value: str) -> tuple[str | None, str | None, str | None]:
     value = (value or "").strip()
     if not value:
-        return None, None
+        return "UNSPECIFIED", value, None
     upper = value.upper()
+    
+    normalized = _CRITICALITY_MAP.get(upper)
+    if normalized:
+        return normalized, value, None
+        
     if upper not in _VALID_CRITICALITY:
-        return None, f"Invalid criticality '{value}' - must be one of {sorted(_VALID_CRITICALITY)}"
-    return upper, None
+        return None, value, f"Invalid criticality '{value}' - must be one of {sorted(_VALID_CRITICALITY)}"
+        
+    return upper, value, None
 
 
 def _parse_quantity(value: str) -> tuple[float | None, str | None]:
@@ -207,56 +240,56 @@ def build_sample_csv() -> str:
         # Pair 1: IDENTICAL - same item, different wording/units
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-01", original_description="Grease Nipple Straight 1/4 BSP",
              material_type="Lubrication Fitting", material_grade="", dimensions="1/4 BSP", technical_specification="Straight hydraulic grease nipple",
-             uom="PC", manufacturer="LubeTech", standard="DIN 71412", function="Lubrication", classification="Lubrication Fitting",
+             uom="PC", manufacturer="LubeTech", manufacturer_part_number="LT-GN-14S", standard="DIN 71412", function="Lubrication", classification="Lubrication Fitting",
              packaging="Loose", criticality="NORMAL", quantity="2000"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-01", original_description="Straight Grease Nipple 1/4 inch BSP Thread",
              material_type="Lubrication Fitting", material_grade="", dimensions="1/4 BSP", technical_specification="Straight hydraulic grease nipple",
-             uom="PC", manufacturer="LubeTech", standard="DIN 71412", function="Lubrication", classification="Lubrication Fitting",
+             uom="PC", manufacturer="LubeTech", manufacturer_part_number="LT-GN-14S", standard="DIN 71412", function="Lubrication", classification="Lubrication Fitting",
              packaging="Loose", criticality="NORMAL", quantity="1500"),
         # Pair 2: equivalent hose clamps
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-02", original_description="Hydraulic Hose Clamp 25mm",
              material_type="Hydraulic Fitting", material_grade="", dimensions="25mm", technical_specification="",
-             uom="EACH", manufacturer="HydroFit", standard="", function="Hose Retention", classification="Hydraulic Fitting",
+             uom="EACH", manufacturer="HydroFit", manufacturer_part_number="", standard="", function="Hose Retention", classification="Hydraulic Fitting",
              packaging="", criticality="NORMAL", quantity="600"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-02", original_description="Hose Clamp 25 mm Hydraulic",
              material_type="Hydraulic Fitting", material_grade="", dimensions="25mm", technical_specification="",
-             uom="EACH", manufacturer="HydroFit", standard="", function="Hose Retention", classification="Hydraulic Fitting",
+             uom="EACH", manufacturer="HydroFit", manufacturer_part_number="", standard="", function="Hose Retention", classification="Hydraulic Fitting",
              packaging="", criticality="NORMAL", quantity="350"),
         # Pair 3: TECHNICAL_CONFLICT - conflicting nominal flange sizes
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-03", original_description="Flange Coupling 4 inch",
              material_type="Pipe Fitting", material_grade="", dimensions="4 inch", technical_specification="",
-             uom="EACH", manufacturer="FlangeWorks", standard="ANSI B16.5", function="Pipe Joining", classification="Pipe Fitting",
+             uom="EACH", manufacturer="FlangeWorks", manufacturer_part_number="", standard="ANSI B16.5", function="Pipe Joining", classification="Pipe Fitting",
              packaging="", criticality="CRITICAL", quantity="80"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-03", original_description="Flange Coupling 6 inch",
              material_type="Pipe Fitting", material_grade="", dimensions="6 inch", technical_specification="",
-             uom="EACH", manufacturer="FlangeWorks", standard="ANSI B16.5", function="Pipe Joining", classification="Pipe Fitting",
+             uom="EACH", manufacturer="FlangeWorks", manufacturer_part_number="", standard="ANSI B16.5", function="Pipe Joining", classification="Pipe Fitting",
              packaging="", criticality="CRITICAL", quantity="55"),
         # Pair 4: NOT_EQUIVALENT - unrelated materials
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-04", original_description="PPE Safety Helmet Yellow",
              material_type="Safety Equipment", material_grade="", dimensions="", technical_specification="",
-             uom="EACH", manufacturer="SafeGuard", standard="IS 2925", function="Head Protection", classification="Safety Equipment",
+             uom="EACH", manufacturer="SafeGuard", manufacturer_part_number="", standard="IS 2925", function="Head Protection", classification="Safety Equipment",
              packaging="", criticality="NORMAL", quantity="500"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-04", original_description="Diesel Generator 25kVA",
              material_type="Power Equipment", material_grade="", dimensions="", technical_specification="25kVA diesel genset",
-             uom="EACH", manufacturer="PowerGen", standard="", function="Backup Power", classification="Power Equipment",
+             uom="EACH", manufacturer="PowerGen", manufacturer_part_number="", standard="", function="Backup Power", classification="Power Equipment",
              packaging="", criticality="NORMAL", quantity="4"),
         # Pair 5: TECHNICAL_CONFLICT - conflicting material grade
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-05", original_description="Carbon Steel Pipe Elbow 90 Degree CS-A106",
              material_type="Pipe Fitting", material_grade="A106", dimensions="90 degree", technical_specification="",
-             uom="PC", manufacturer="", standard="", function="", classification="Pipe Elbow",
+             uom="PC", manufacturer="", manufacturer_part_number="", standard="", function="", classification="Pipe Elbow",
              packaging="", criticality="NORMAL", quantity="300"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-05", original_description="Carbon Steel Pipe Elbow 90 Degree CS-A335",
              material_type="Pipe Fitting", material_grade="A335", dimensions="90 degree", technical_specification="",
-             uom="PC", manufacturer="", standard="", function="", classification="Pipe Elbow",
+             uom="PC", manufacturer="", manufacturer_part_number="", standard="", function="", classification="Pipe Elbow",
              packaging="", criticality="NORMAL", quantity="180"),
         # Pair 6: packaging difference must NOT be a conflict
         dict(cpse_code="IOCL", original_material_code="IOCL-CSV-06", original_description="O-Ring Seal 50mm NBR",
              material_type="Seal", material_grade="NBR", dimensions="50mm", technical_specification="",
-             uom="PC", manufacturer="", standard="", function="", classification="Seal",
+             uom="PC", manufacturer="", manufacturer_part_number="", standard="", function="", classification="Seal",
              packaging="Loose, Pack of 1", criticality="NORMAL", quantity="150"),
         dict(cpse_code="ONGC", original_material_code="ONGC-CSV-06", original_description="O-Ring Seal 50mm NBR",
              material_type="Seal", material_grade="NBR", dimensions="50mm", technical_specification="",
-             uom="BOX", manufacturer="", standard="", function="", classification="Seal",
+             uom="BOX", manufacturer="", manufacturer_part_number="", standard="", function="", classification="Seal",
              packaging="Box of 50", criticality="NORMAL", quantity="3"),
     ]
     buffer = io.StringIO()
@@ -266,7 +299,7 @@ def build_sample_csv() -> str:
     return buffer.getvalue()
 
 
-def build_upload_template_csv() -> str:
+def build_upload_template_csv(single_company: bool = False) -> str:
     """A blank column-header template (plus one illustrative example row) for
     app.api.endpoints.material_upload - a CPSE's own material-master export,
     unlike build_sample_csv above which is pre-filled with the specific demo
@@ -274,11 +307,16 @@ def build_upload_template_csv() -> str:
     example = dict(
         cpse_code="IOCL", original_material_code="MAT-000001", original_description="Carbon Steel Pipe 100mm ASTM A106",
         material_type="Pipe", material_grade="A106", dimensions="100mm", technical_specification="Seamless carbon steel pipe",
-        uom="METER", manufacturer="", standard="ASTM A106", function="Fluid Transfer", classification="Pipe",
+        uom="METER", manufacturer="", manufacturer_part_number="", standard="ASTM A106", function="Fluid Transfer", classification="Pipe",
         packaging="", criticality="NORMAL", quantity="",
     )
+    fieldnames = list(REQUIRED_COLUMNS)
+    if single_company:
+        fieldnames.remove("cpse_code")
+        del example["cpse_code"]
+
     buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=REQUIRED_COLUMNS)
+    writer = csv.DictWriter(buffer, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerow(example)
     return buffer.getvalue()
@@ -308,20 +346,51 @@ def validate_material_file(
         raise CsvImportError("File is empty.")
 
     fieldnames, raw_rows = _parse_rows(filename, raw_bytes)
-    missing = [c for c in REQUIRED_COLUMNS if c not in fieldnames]
+    required_cols = list(REQUIRED_COLUMNS)
+    if allowed_cpse_ids and len(allowed_cpse_ids) == 1:
+        required_cols.remove("cpse_code")
+
+    missing = [c for c in required_cols if c not in fieldnames]
     if missing:
         raise CsvImportError(f"File is missing required column(s): {', '.join(missing)}")
     if len(raw_rows) > MAX_ROWS:
         raise CsvImportError(f"File has more than {MAX_ROWS} data rows - split it into smaller files.")
 
+    return validate_material_rows(
+        db,
+        filename=filename,
+        raw_rows=raw_rows,
+        is_demo_data=is_demo_data,
+        allowed_cpse_ids=allowed_cpse_ids,
+    )
+
+
+def validate_material_rows(
+    db: Session,
+    *,
+    filename: str,
+    raw_rows: list[dict],
+    is_demo_data: bool,
+    allowed_cpse_ids: set[uuid.UUID] | None = None,
+) -> CsvValidationResult:
+    """
+    Validates a list of dictionaries as rows. Used by both file upload and manual entry.
+    """
     cpse_by_code = {c.code.upper(): c for c in db.query(CPSE).all()}
+    cpse_by_id = {c.id: c for c in cpse_by_code.values()}
+
+    single_cpse = None
+    if allowed_cpse_ids and len(allowed_cpse_ids) == 1:
+        single_cpse_id = next(iter(allowed_cpse_ids))
+        single_cpse = cpse_by_id.get(single_cpse_id)
 
     rows: list[RowResult] = []
     seen_keys: dict[tuple[str, str], list[int]] = {}
+    normalizations: dict[str, str] = {}
 
     for index, raw_row in enumerate(raw_rows):
         line_number = index + 2  # header is row 1, in both CSV and Excel
-        data = {k: (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items() if k in REQUIRED_COLUMNS}
+        data = {k: (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items() if k in _ALLOWED_COLUMNS}
         result = RowResult(row_number=line_number, raw=data)
 
         for col in _REQUIRED_NON_EMPTY:
@@ -329,10 +398,17 @@ def validate_material_file(
                 result.errors.append(f"'{col}' is required")
 
         cpse_code = (data.get("cpse_code") or "").upper()
+        if not cpse_code and single_cpse:
+            cpse_code = single_cpse.code.upper()
+            data["cpse_code"] = single_cpse.code
+            
+        if not cpse_code:
+            result.errors.append("'cpse_code' is required")
+
         cpse = cpse_by_code.get(cpse_code)
-        if data.get("cpse_code") and cpse is None:
+        if cpse_code and cpse is None:
             result.errors.append(
-                f"Unknown CPSE code '{data['cpse_code']}' - this import can only target CPSEs already "
+                f"Unknown CPSE code '{data.get('cpse_code', cpse_code)}' - this import can only target CPSEs already "
                 "onboarded under Participating CPSEs, never create new ones."
             )
         elif cpse is not None and allowed_cpse_ids is not None and cpse.id not in allowed_cpse_ids:
@@ -342,12 +418,26 @@ def validate_material_file(
             )
             cpse = None
 
-        criticality, crit_err = _parse_criticality(data.get("criticality", ""))
+        criticality, orig_criticality, crit_err = _parse_criticality(data.get("criticality", ""))
         if crit_err:
             result.errors.append(crit_err)
+        elif criticality and orig_criticality and orig_criticality.upper() != criticality:
+            normalizations[orig_criticality] = criticality
         quantity, qty_err = _parse_quantity(data.get("quantity", ""))
         if qty_err:
             result.errors.append(qty_err)
+            
+        req_qty, req_qty_err = _parse_quantity(data.get("required_quantity", ""))
+        if req_qty_err: result.errors.append("required_quantity: " + req_qty_err)
+        
+        ann_qty, ann_qty_err = _parse_quantity(data.get("annual_demand_quantity", ""))
+        if ann_qty_err: result.errors.append("annual_demand_quantity: " + ann_qty_err)
+        
+        stk_qty, stk_qty_err = _parse_quantity(data.get("current_stock_quantity", ""))
+        if stk_qty_err: result.errors.append("current_stock_quantity: " + stk_qty_err)
+        
+        uprice, uprice_err = _parse_quantity(data.get("unit_price", ""))
+        if uprice_err: result.errors.append("unit_price: " + uprice_err)
 
         material_code = data.get("original_material_code", "")
         if cpse is not None and material_code:
@@ -372,12 +462,18 @@ def validate_material_file(
                 dimensions=data.get("dimensions") or None,
                 technical_specification=data.get("technical_specification") or None,
                 manufacturer=data.get("manufacturer") or None,
+                manufacturer_part_number=data.get("manufacturer_part_number") or None,
                 standard=data.get("standard") or None,
                 function=data.get("function") or None,
                 classification=data.get("classification") or None,
                 packaging=data.get("packaging") or None,
                 criticality=criticality,
                 quantity=quantity,
+                annual_demand_quantity=ann_qty,
+                current_stock_quantity=stk_qty,
+                required_quantity=req_qty,
+                unit_price=uprice,
+                currency=data.get("currency") or None,
                 is_active=True,
             )
 
@@ -391,7 +487,36 @@ def validate_material_file(
                     row.record = None
                     row.cpse_id = None
 
-    return CsvValidationResult(filename=filename, total_rows=len(rows), rows=rows, file_errors=[])
+    distribution_map = {}
+    for row in rows:
+        if row.is_valid and row.cpse_id:
+            cpse_code = row.raw.get("cpse_code", "").upper()
+            if single_cpse:
+                cpse_code = single_cpse.code.upper()
+                
+            cpse = cpse_by_code.get(cpse_code)
+            if cpse and cpse.code not in distribution_map:
+                distribution_map[cpse.code] = {
+                    "cpse_code": cpse.code,
+                    "cpse_name": cpse.name,
+                    "sector_name": cpse.cognate_group.sector.name if cpse.cognate_group and cpse.cognate_group.sector else None,
+                    "cognate_group_name": cpse.cognate_group.name if cpse.cognate_group else None,
+                    "material_count": 0,
+                }
+            if cpse:
+                distribution_map[cpse.code]["material_count"] += 1
+                
+    distribution = list(distribution_map.values())
+    distribution.sort(key=lambda x: (x["sector_name"] or "", x["cpse_name"]))
+
+    return CsvValidationResult(
+        filename=filename,
+        total_rows=len(rows),
+        rows=rows,
+        file_errors=[],
+        normalizations=normalizations,
+        distribution=distribution,
+    )
 
 
 @dataclass
@@ -446,16 +571,46 @@ def import_valid_rows(
     from app.connectors.sync_engine import trigger_batch_settlement
     from app.models.harmonization import CommonMaterialMapping
     from app.models.enums import MappingDecisionStatus
+    from app.models.import_batch import ImportBatch
+    from app.models.cpse import CPSE
+    from datetime import datetime, timezone
 
-    batch_id = uuid.uuid4()
+    # Create an ImportBatch for each unique CPSE in the file
+    cpse_ids = list(set(row.cpse_id for row in validation.valid_rows if row.cpse_id))
+    import_batches: dict[uuid.UUID, ImportBatch] = {}
+    now = datetime.now(timezone.utc)
+    
+    for c_id in cpse_ids:
+        cpse = db.query(CPSE).get(c_id)
+        ib = ImportBatch(
+            cpse_id=c_id,
+            sector=cpse.cognate_group.sector.name if cpse and cpse.cognate_group and cpse.cognate_group.sector else None,
+            filename=validation.filename,
+            uploaded_by=actor_id,
+            upload_date=now.date(),
+            upload_time=now.time(),
+            status="PROCESSING"
+        )
+        db.add(ib)
+        import_batches[c_id] = ib
+        
+    db.flush()
+
+    # We will use the first ImportBatch id as the summary batch_id for backward compatibility,
+    # or just generate a generic one if empty.
+    summary_batch_id = list(import_batches.values())[0].id if import_batches else uuid.uuid4()
+    
     counts = {"created": 0, "updated": 0, "skipped": 0, "failed": 0}
     to_analyze: list[uuid.UUID] = []
     results: list[ImportRowOutcome] = []
     outcome_by_material_id: dict[uuid.UUID, ImportRowOutcome] = {}
 
-    for row in validation.valid_rows:
-        assert row.record is not None and row.cpse_id is not None
-        try:
+    try:
+        for row in validation.valid_rows:
+            assert row.record is not None and row.cpse_id is not None
+            ib = import_batches[row.cpse_id]
+            ib.total_records += 1
+            
             outcome, material = material_ingestion.upsert_cpse_material(
                 db,
                 cpse_id=row.cpse_id,
@@ -465,23 +620,27 @@ def import_valid_rows(
                 is_demo_data=is_demo_data,
                 created_action=row_created_action,
                 updated_action=row_updated_action,
-                log_details_extra={"import_batch_id": str(batch_id), "source": source_label, "filename": validation.filename},
+                log_details_extra={"import_batch_id": str(ib.id), "source": source_label, "filename": validation.filename},
+                commit=False,
             )
-        except Exception as exc:  # noqa: BLE001 - one bad row must not fail the whole import
-            db.rollback()
-            outcome, material = "failed", None
-            row.errors.append(str(exc))
-        counts[outcome] += 1
-        row_outcome = ImportRowOutcome(
-            row_number=row.row_number,
-            cpse_code=row.raw.get("cpse_code", ""),
-            original_material_code=row.raw.get("original_material_code", ""),
-            outcome=outcome,
-        )
-        results.append(row_outcome)
-        if material is not None:
-            to_analyze.append(material.id)
-            outcome_by_material_id[material.id] = row_outcome
+            if material is not None:
+                material.import_batch_id = ib.id
+            counts[outcome] += 1
+            row_outcome = ImportRowOutcome(
+                row_number=row.row_number,
+                cpse_code=row.raw.get("cpse_code", ""),
+                original_material_code=row.raw.get("original_material_code", ""),
+                outcome=outcome,
+            )
+            results.append(row_outcome)
+            if material is not None:
+                to_analyze.append(material.id)
+                outcome_by_material_id[material.id] = row_outcome
+
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise CsvImportError(f"Import failed unexpectedly: {str(exc)}") from exc
 
     trigger_batch_settlement(db, to_analyze, wait=True)
 
@@ -502,11 +661,24 @@ def import_valid_rows(
             row_outcome.common_material_code = mapping.common_material.common_code
 
     invalid_count = len(validation.invalid_rows)
+    
+    # Update ImportBatch counts
+    for ib in import_batches.values():
+        ib.created_count = sum(1 for r in results if r.outcome == "created" and r.cpse_code == ib.cpse.code)
+        ib.updated_count = sum(1 for r in results if r.outcome == "updated" and r.cpse_code == ib.cpse.code)
+        ib.duplicate_count = sum(1 for r in results if r.outcome == "skipped" and r.cpse_code == ib.cpse.code)
+        ib.failed_count = sum(1 for r in results if r.outcome == "failed" and r.cpse_code == ib.cpse.code)
+        ib.invalid_count = invalid_count  # We assign total invalid count to all batches (usually it's a single CPSE file anyway)
+        ib.status = "COMPLETED"
+        ib.completed_at = datetime.now(timezone.utc)
+    
+    db.commit()
+
     log_action(
         db,
         action=batch_action,
         entity_type=batch_entity_type,
-        entity_id=batch_id,
+        entity_id=summary_batch_id,
         actor_id=actor_id,
         actor_name=actor_name,
         actor_type="USER",
@@ -521,7 +693,7 @@ def import_valid_rows(
     )
 
     return ImportSummary(
-        batch_id=batch_id,
+        batch_id=summary_batch_id,
         filename=validation.filename,
         total_rows=validation.total_rows,
         valid_count=len(validation.valid_rows),

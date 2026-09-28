@@ -11,9 +11,10 @@ import CommonMaterialCodeDetailPage from "@/pages/CommonMaterialCodeDetail";
 import Cpse from "@/pages/Cpse";
 import CpseDetail from "@/pages/CpseDetail";
 import Dashboard from "@/pages/Dashboard";
-import DataSynchronization from "@/pages/DataSynchronization";
-import DemoDataImport from "@/pages/DemoDataImport";
+
+
 import HarmonizationList from "@/pages/HarmonizationList";
+import ImportHistory from "@/pages/ImportHistory";
 import HarmonizationPairDetail from "@/pages/HarmonizationPairDetail";
 import LegacyCodes from "@/pages/LegacyCodes";
 import LegacyCodeDetail from "@/pages/LegacyCodeDetail";
@@ -25,7 +26,16 @@ import MaterialUpload from "@/pages/MaterialUpload";
 import NotFound from "@/pages/NotFound";
 import Notifications from "@/pages/Notifications";
 import ProcurementAnalytics from "@/pages/ProcurementAnalytics";
+
 import Settings from "@/pages/Settings";
+import SectorSelection from "@/pages/SectorSelection";
+import AnalysisModeSelection from "@/pages/AnalysisModeSelection";
+import BulkCpseSelection from "@/pages/BulkCpseSelection";
+import BulkCpseUpload from "@/pages/BulkCpseUpload";
+import DataReadiness from "@/pages/DataReadiness";
+import Taxonomy from "@/pages/Taxonomy";
+import AiEvaluation from "@/pages/AiEvaluation";
+import NewMaterialPrecheck from "@/pages/NewMaterialPrecheck";
 
 const REVIEW_ROLES = ["ADMIN", "MATERIAL_EXPERT", "REVIEWER", "VIEWER"] as const;
 
@@ -48,6 +58,7 @@ export default function App() {
         <Route path="/materials" element={<Materials />} />
         <Route path="/materials/cpse" element={<Materials />} />
         <Route path="/material-upload" element={<MaterialUpload />} />
+        <Route path="/materials/upload/history" element={<ImportHistory />} />
         <Route path="/materials/:id" element={<MaterialDetail />} />
         <Route path="/materials/:id/analysis" element={<MaterialAnalysis />} />
         <Route path="/common-material-master" element={<CommonMaterialMaster />} />
@@ -65,24 +76,15 @@ export default function App() {
         <Route path="/harmonization/pairs/:mappingId" element={<HarmonizationPairDetail />} />
 
         {/* CPSE Network */}
+        <Route path="/cpse/sectors" element={<SectorSelection />} />
+        <Route path="/cpse/sectors/:sector/analysis-mode" element={<AnalysisModeSelection />} />
+        <Route path="/cpse/sectors/:sector/single" element={<Cpse />} />
+        <Route path="/cpse/bulk-add" element={<BulkCpseUpload />} />
+        <Route path="/cpse/sectors/:sector/bulk" element={<BulkCpseSelection />} />
         <Route path="/cpse" element={<Cpse />} />
         <Route path="/cpse/:id" element={<CpseDetail />} />
-        <Route
-          path="/synchronization"
-          element={
-            <RequireAuth roles={["ADMIN", "MATERIAL_EXPERT"]}>
-              <DataSynchronization />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/demo-import"
-          element={
-            <RequireAuth roles={["ADMIN", "MATERIAL_EXPERT"]}>
-              <DemoDataImport />
-            </RequireAuth>
-          }
-        />
+
+
 
         {/* Approvals */}
         <Route
@@ -125,10 +127,15 @@ export default function App() {
         {/* Analytics */}
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/analytics/procurement" element={<ProcurementAnalytics />} />
+
         <Route path="/analytics/classification" element={<Analytics />} />
         <Route path="/analytics/trends" element={<Analytics />} />
+        <Route path="/analytics/data-readiness" element={<DataReadiness />} />
 
         {/* Governance */}
+        <Route path="/governance/taxonomy" element={<Taxonomy />} />
+        <Route path="/governance/ai-evaluation" element={<AiEvaluation />} />
+        <Route path="/precheck" element={<NewMaterialPrecheck />} />
         <Route
           path="/audit-log"
           element={

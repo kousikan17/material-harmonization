@@ -9,7 +9,7 @@ never disagree about what a "grade" or "dimension" token looks like.
 Never overwrites a value the CPSE's own source explicitly provided -
 extraction only fills gaps, it never second-guesses source data.
 """
-from app.ai.attribute_patterns import GRADE_RE, STANDARD_RE, THREAD_RE, DIMENSION_MM_RE, DIMENSION_INCH_RE
+from app.ai.attribute_patterns import GRADE_RE, STANDARD_RE, THREAD_RE, DIMENSION_MM_RE, DIMENSION_INCH_RE, MPN_RE
 from app.services.normalization import basic_clean
 
 
@@ -25,6 +25,7 @@ def extract_missing_attributes(
     material_grade: str | None,
     dimensions: str | None,
     standard: str | None,
+    manufacturer_part_number: str | None = None,
 ) -> dict[str, str | None]:
     """Returns {field: value} only for fields that were empty and a token
     was found - callers merge this into the record, never blindly overwrite."""
@@ -39,5 +40,7 @@ def extract_missing_attributes(
         )
     if not standard:
         result["standard"] = _first_match(STANDARD_RE, text)
+    if not manufacturer_part_number:
+        result["manufacturer_part_number"] = _first_match(MPN_RE, text)
 
     return {k: v for k, v in result.items() if v}

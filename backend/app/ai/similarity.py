@@ -12,11 +12,13 @@ from sqlalchemy.orm import Session
 from app.models.material import CPSEMaterial, MaterialEmbedding
 from app.models.enums import MaterialStatus
 
+import uuid
+
 DEFAULT_CANDIDATE_LIMIT = 5
 
 
 def find_candidate_materials(
-    db: Session, material: CPSEMaterial, limit: int = DEFAULT_CANDIDATE_LIMIT
+    db: Session, material: CPSEMaterial, limit: int = DEFAULT_CANDIDATE_LIMIT, target_company_ids: list[uuid.UUID] | None = None
 ) -> list[CPSEMaterial]:
     if material.embedding is None or material.embedding.text_embedding is None:
         return []
@@ -30,6 +32,9 @@ def find_candidate_materials(
         .filter(CPSEMaterial.status != MaterialStatus.FAILED.value)
         .filter(MaterialEmbedding.text_embedding.isnot(None))
     )
+
+    if target_company_ids:
+        base_query = base_query.filter(CPSEMaterial.cpse_id.in_(target_company_ids))
 
     candidates: list[CPSEMaterial] = []
     if material.normalized_classification:

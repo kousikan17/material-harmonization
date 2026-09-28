@@ -38,8 +38,8 @@ export default function Notifications() {
                 <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
               )}
               <div className="flex-1">
-                <p className="text-sm font-semibold text-slate-800">{n.title}</p>
-                <p className="text-sm text-slate-600">{n.message}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{n.title}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{n.message}</p>
                 <p className="mt-1 text-xs text-slate-400">{new Date(n.created_at).toLocaleString()}</p>
               </div>
               {!n.is_read && (

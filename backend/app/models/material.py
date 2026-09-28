@@ -40,6 +40,7 @@ class CPSEMaterial(Base, UUIDMixin, TimestampMixin):
     normalized_uom: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     manufacturer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    manufacturer_part_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     standard: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     function: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
@@ -51,6 +52,27 @@ class CPSEMaterial(Base, UUIDMixin, TimestampMixin):
     packaging: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     criticality: Mapped[str] = mapped_column(String(30), nullable=False, default="UNSPECIFIED")
     quantity: Mapped[Optional[float]] = mapped_column(nullable=True)
+    
+    # Demand & Procurement Opportunity Fields
+    annual_demand_quantity: Mapped[Optional[float]] = mapped_column(nullable=True)
+    current_stock_quantity: Mapped[Optional[float]] = mapped_column(nullable=True)
+    required_quantity: Mapped[Optional[float]] = mapped_column(nullable=True)
+    unit_price: Mapped[Optional[float]] = mapped_column(nullable=True)
+    currency: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+
+    attributes_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+
+    # Data Readiness Scores
+    description_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    uom_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    classification_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    technical_specification_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    manufacturer_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    manufacturer_part_number_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    attribute_completeness_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    overall_readiness_score: Mapped[Optional[float]] = mapped_column(nullable=True, index=True)
+    readiness_band: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+
 
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     status: Mapped[str] = mapped_column(
@@ -74,8 +96,12 @@ class CPSEMaterial(Base, UUIDMixin, TimestampMixin):
     sync_history_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sync_history.id"), nullable=True, index=True
     )
+    import_batch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     cpse: Mapped["CPSE"] = relationship(back_populates="materials")
+    import_batch: Mapped[Optional["ImportBatch"]] = relationship(back_populates="materials")
     attributes: Mapped[list["MaterialAttribute"]] = relationship(
         back_populates="material", cascade="all, delete-orphan"
     )

@@ -44,8 +44,8 @@ export default function LegacyCodes() {
       )}
 
       {!isError && !isLoading && !hasAny && !debouncedQ && (
-        <div className="rounded border border-slate-200 bg-slate-50 p-10 text-center">
-          <p className="text-sm font-medium text-slate-600">No legacy code groups detected yet.</p>
+        <div className="rounded border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 p-10 text-center">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No legacy code groups detected yet.</p>
         </div>
       )}
 
@@ -76,7 +76,7 @@ export default function LegacyCodes() {
             )}
             {data?.items.map((group) => (
               <TableRow key={group.original_material_code}>
-                <TableCell className="font-mono font-semibold text-slate-800">{group.original_material_code}</TableCell>
+                <TableCell className="font-mono font-semibold text-slate-800 dark:text-slate-200">{group.original_material_code}</TableCell>
                 <TableCell>{group.cpses.join(", ")}</TableCell>
                 <TableCell>{group.materials_count}</TableCell>
                 <TableCell className="text-right">

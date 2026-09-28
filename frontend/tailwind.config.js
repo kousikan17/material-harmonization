@@ -45,7 +45,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["'Noto Sans'", "'Noto Sans Devanagari'", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["'Inter'", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         sm: "2px",

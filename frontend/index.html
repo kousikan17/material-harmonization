@@ -6,10 +6,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>CPSE Material Harmonization Platform</title>
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        document.body.innerHTML = '<div style="color:red;padding:20px;font-family:sans-serif;"><h1>Runtime Error</h1><p>' + msg + '</p><pre>' + (error && error.stack ? error.stack : '') + '</pre></div>';
+      };
+      window.onunhandledrejection = function(event) {
+        document.body.innerHTML = '<div style="color:red;padding:20px;font-family:sans-serif;"><h1>Unhandled Rejection</h1><p>' + event.reason + '</p></div>';
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

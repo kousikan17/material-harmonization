@@ -68,24 +68,24 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Font Size</Label>
-            <div className="flex items-center rounded border border-slate-300 text-slate-600">
-              <button onClick={decreaseFont} className="flex h-8 w-8 items-center justify-center border-r border-slate-300 hover:bg-slate-100">−</button>
-              <button onClick={resetFont} className="flex h-8 items-center px-3 text-xs font-semibold hover:bg-slate-100">Reset</button>
-              <button onClick={increaseFont} className="flex h-8 w-8 items-center justify-center border-l border-slate-300 hover:bg-slate-100">+</button>
+            <div className="flex items-center rounded border border-slate-300 dark:border-navy-700 text-slate-600 dark:text-slate-400">
+              <button onClick={decreaseFont} className="flex h-8 w-8 items-center justify-center border-r border-slate-300 dark:border-navy-700 hover:bg-slate-100 dark:bg-navy-800">−</button>
+              <button onClick={resetFont} className="flex h-8 items-center px-3 text-xs font-semibold hover:bg-slate-100 dark:bg-navy-800">Reset</button>
+              <button onClick={increaseFont} className="flex h-8 w-8 items-center justify-center border-l border-slate-300 dark:border-navy-700 hover:bg-slate-100 dark:bg-navy-800">+</button>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <Label>Language</Label>
-            <div className="flex items-center overflow-hidden rounded border border-slate-300 text-xs font-medium">
+            <div className="flex items-center overflow-hidden rounded border border-slate-300 dark:border-navy-700 text-xs font-medium">
               <button
                 onClick={() => setLanguage("EN")}
-                className={"px-3 py-1.5 " + (language === "EN" ? "bg-brand-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100")}
+                className={"px-3 py-1.5 " + (language === "EN" ? "bg-brand-600 text-white" : "bg-white dark:bg-navy-950 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-navy-800")}
               >
                 English
               </button>
               <button
                 onClick={() => setLanguage("HI")}
-                className={"border-l border-slate-300 px-3 py-1.5 " + (language === "HI" ? "bg-brand-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100")}
+                className={"border-l border-slate-300 dark:border-navy-700 px-3 py-1.5 " + (language === "HI" ? "bg-brand-600 text-white" : "bg-white dark:bg-navy-950 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-navy-800")}
               >
                 हिंदी
               </button>

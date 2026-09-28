@@ -49,7 +49,7 @@ export default function LegacyCodeDetail() {
     return (
       <div className="space-y-4">
         <PageHeader breadcrumbs={[{ label: "Legacy Codes", to: "/legacy-codes" }, { label: "Not Found" }]} title="Legacy Code Not Found" />
-        <p className="text-sm text-slate-500">No legacy code group was found for this material code. It may only exist for one CPSE.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No legacy code group was found for this material code. It may only exist for one CPSE.</p>
       </div>
     );
   }
@@ -99,16 +99,16 @@ export default function LegacyCodeDetail() {
             const meta = CLASSIFICATION_META[pair.classification];
             if (!a || !b) return null;
             return (
-              <div key={`${pair.material_a_id}-${pair.material_b_id}`} className="rounded border border-slate-200 p-3">
+              <div key={`${pair.material_a_id}-${pair.material_b_id}`} className="rounded border border-slate-200 dark:border-navy-700 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {a.cpse.code} ({a.original_material_code}) &harr; {b.cpse.code} ({b.original_material_code})
                   </p>
                   <Badge variant={meta.variant}>
                     <meta.icon className="h-3 w-3" /> {meta.label}
                   </Badge>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{meta.note}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.note}</p>
               </div>
             );
           })}
@@ -122,7 +122,7 @@ function Field({ label, children }: { label: string; children?: ReactNode }) {
   return (
     <div>
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="font-medium text-slate-800">{children || "Missing attribute"}</p>
+      <p className="font-medium text-slate-800 dark:text-slate-200">{children || "Missing attribute"}</p>
     </div>
   );
 }

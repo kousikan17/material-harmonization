@@ -29,10 +29,15 @@ _VIEW_MAPPING_TYPES: dict[str, tuple[str, ...] | None] = {
 }
 
 
-def _list_view(db: Session, current_user: User, mapping_types, q, cpse_id, page, page_size, decision_status=None):
+def _list_view(db: Session, current_user: User, mapping_types, q, company_ids, page, page_size, decision_status=None):
     pairs = duplicate_service.list_duplicate_pairs(db, mapping_types=mapping_types)
     if decision_status:
         pairs = [p for p in pairs if p.decision_status == decision_status]
+
+    if company_ids:
+        # Strict cross-CPSE matching: both source and matched must be in the selected list.
+        # If it's a single CPSE selection, both will be that same CPSE.
+        pairs = [p for p in pairs if p.source.cpse_id in company_ids and p.matched.cpse_id in company_ids]
 
     total_duplicates = len(pairs)
     pending_validation = sum(1 for p in pairs if p.decision_status == "PENDING_VALIDATION")
@@ -49,8 +54,6 @@ def _list_view(db: Session, current_user: User, mapping_types, q, cpse_id, page,
             or needle in p.matched.original_material_code.lower()
             or needle in p.matched.original_description.lower()
         ]
-    if cpse_id:
-        pairs = [p for p in pairs if p.source.cpse_id == cpse_id or p.matched.cpse_id == cpse_id]
 
     total_filtered = len(pairs)
     start = (page - 1) * page_size
@@ -82,42 +85,42 @@ def _list_view(db: Session, current_user: User, mapping_types, q, cpse_id, page,
 
 @router.get("/recommendations", response_model=DuplicateListResponse)
 def list_recommendations(
-    q: str | None = None, cpse_id: uuid.UUID | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    q: str | None = None, company_ids: list[uuid.UUID] | None = Query(None), page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["recommendations"], q, cpse_id, page, page_size)
+    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["recommendations"], q, company_ids, page, page_size)
 
 
 @router.get("/duplicates", response_model=DuplicateListResponse)
 def list_duplicates(
-    q: str | None = None, cpse_id: uuid.UUID | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    q: str | None = None, company_ids: list[uuid.UUID] | None = Query(None), page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["duplicates"], q, cpse_id, page, page_size)
+    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["duplicates"], q, company_ids, page, page_size)
 
 
 @router.get("/near-duplicates", response_model=DuplicateListResponse)
 def list_near_duplicates(
-    q: str | None = None, cpse_id: uuid.UUID | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    q: str | None = None, company_ids: list[uuid.UUID] | None = Query(None), page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["near-duplicates"], q, cpse_id, page, page_size)
+    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["near-duplicates"], q, company_ids, page, page_size)
 
 
 @router.get("/functional-equivalence", response_model=DuplicateListResponse)
 def list_functional_equivalence(
-    q: str | None = None, cpse_id: uuid.UUID | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    q: str | None = None, company_ids: list[uuid.UUID] | None = Query(None), page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["functional-equivalence"], q, cpse_id, page, page_size)
+    return _list_view(db, current_user, _VIEW_MAPPING_TYPES["functional-equivalence"], q, company_ids, page, page_size)
 
 
 @router.get("/technical-conflicts", response_model=DuplicateListResponse)
 def list_technical_conflicts(
-    q: str | None = None, cpse_id: uuid.UUID | None = None, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
+    q: str | None = None, company_ids: list[uuid.UUID] | None = Query(None), page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    return _list_view(db, current_user, None, q, cpse_id, page, page_size, decision_status="TECHNICAL_CONFLICT")
+    return _list_view(db, current_user, None, q, company_ids, page, page_size, decision_status="TECHNICAL_CONFLICT")
 
 
 @router.get("/pairs/{mapping_id}", response_model=DuplicatePairDetailOut)

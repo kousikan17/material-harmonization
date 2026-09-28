@@ -70,3 +70,24 @@ class MaterialListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+class MaterialPrecheckRequest(BaseModel):
+    description: str
+    specification: Optional[str] = None
+    uom: Optional[str] = None
+    classification: Optional[str] = None
+    manufacturer: Optional[str] = None
+    manufacturer_part_number: Optional[str] = None
+    attributes_json: Optional[dict] = None
+
+class PrecheckCandidate(BaseModel):
+    material_id: uuid.UUID
+    common_code: Optional[str] = None
+    description: str
+    score: float
+    decision: str
+
+class MaterialPrecheckResponse(BaseModel):
+    readiness_score: float
+    missing_critical_fields: list[str]
+    candidates: list[PrecheckCandidate]

@@ -116,12 +116,12 @@ function ConnectionRow({
   return (
     <TableRow>
       <TableCell>
-        <p className="font-semibold text-slate-800">{connection.cpse.code}</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-200">{connection.cpse.code}</p>
         <p className="text-xs text-slate-400">{connection.connection_name}</p>
         {connection.is_demo && <Badge variant="warning">DEMO</Badge>}
       </TableCell>
       <TableCell>{connection.database_type}</TableCell>
-      <TableCell className="font-mono text-xs text-slate-500">{connection.table_name}</TableCell>
+      <TableCell className="font-mono text-xs text-slate-500 dark:text-slate-400">{connection.table_name}</TableCell>
       <TableCell>
         <Badge variant={state.variant}>{state.label}</Badge>
         {testResult && (

@@ -3,7 +3,7 @@ import type { DuplicateListResponse, DuplicatePairDetail } from "@/types";
 
 export interface HarmonizationListParams {
   q?: string;
-  cpse_id?: string;
+  company_ids?: string[];
   page?: number;
   page_size?: number;
 }

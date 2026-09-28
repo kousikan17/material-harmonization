@@ -25,14 +25,9 @@ celery_app.conf.update(
     worker_max_tasks_per_child=100,
 )
 
-# Celery Beat: a single fixed-interval tick that checks every source
-# connection's OWN configurable sync_interval_seconds
-# (app.connectors.sync_engine.list_due_connections) and enqueues incremental
-# syncs for whichever are due - not a per-connection Beat schedule entry, so
-# adding/editing a connection's interval never requires restarting Beat.
 celery_app.conf.beat_schedule = {
-    "check-due-source-syncs": {
+    "trigger_source_syncs": {
         "task": "app.workers.tasks.check_due_source_syncs",
         "schedule": settings.SOURCE_SYNC_BEAT_TICK_SECONDS,
-    },
+    }
 }

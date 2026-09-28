@@ -50,12 +50,53 @@ from app.services.scoring import (
     grade_score as grade_score_fn,
     manufacturer_is_applicable,
     manufacturer_score as manufacturer_score_fn,
+    manufacturer_part_number_score as manufacturer_part_number_score_fn,
     attribute_score as attr_score_fn,
     standard_score as standard_score_fn,
     uom_score as uom_score_fn,
 )
 
 logger = logging.getLogger(__name__)
+
+class PrecheckAnalysisResult:
+    def __init__(self, best_candidate, final_score, decision):
+        self.best_candidate = best_candidate
+        self.final_score = final_score
+        self.decision = decision
+
+def evaluate_candidates(db: Session, transient_material: CPSEMaterial, candidates: list[CPSEMaterial]) -> PrecheckAnalysisResult:
+    """Evaluates candidates purely in memory for precheck purposes."""
+    attrs_a = {}
+    scored = []
+    for candidate in candidates:
+        breakdown, text_cos = _score_pair(db, transient_material, transient_material.embedding, attrs_a, candidate)
+        scored.append((candidate, breakdown))
+
+    if scored:
+        best_candidate, best_breakdown = max(scored, key=lambda pair: pair[1].final_score)
+    else:
+        best_candidate, best_breakdown = None, compute_final_score(
+            description_score=0, specification_score=0, classification_score=0, uom_score=0,
+            attribute_score=0, grade_score=0, dimension_score=0, standard_score=0,
+            manufacturer_score=0, manufacturer_part_number_score=0, function_score=0, criticality_score=0,
+            manufacturer_applicable=False, manufacturer_part_number_applicable=False
+        )
+
+    decision_breakdown, ml_result = blend_scores(best_breakdown)
+    conflict = _check_conflict(transient_material, best_candidate) if best_candidate else ConflictResult(False, [])
+    decision_result = evaluate(
+        decision_breakdown,
+        transient_material.original_description,
+        best_candidate.original_description if best_candidate else "",
+        conflict=conflict,
+    )
+    
+    return PrecheckAnalysisResult(
+        best_candidate=best_candidate,
+        final_score=decision_breakdown.final_score,
+        decision=decision_result.decision
+    )
+
 
 # Decisions that establish some relationship worth recording as a mapping.
 # NOT_EQUIVALENT records nothing - there is nothing to map.
@@ -146,6 +187,7 @@ def _score_pair(
     criticality_score = criticality_score_fn(material.criticality, candidate.criticality)
     manufacturer_applicable = manufacturer_is_applicable(material.criticality, candidate.criticality)
     manufacturer_score = manufacturer_score_fn(material.manufacturer, candidate.manufacturer) if manufacturer_applicable else 0.0
+    manufacturer_part_number_score = manufacturer_part_number_score_fn(material.manufacturer_part_number, candidate.manufacturer_part_number) if manufacturer_applicable else 0.0
 
     breakdown = compute_final_score(
         description_score=description_score,
@@ -161,9 +203,11 @@ def _score_pair(
         standard_applicable=field_is_applicable(material.standard, candidate.standard),
         function_applicable=field_is_applicable(material.function, candidate.function),
         manufacturer_score=manufacturer_score,
+        manufacturer_part_number_score=manufacturer_part_number_score,
         function_score=function_score,
         criticality_score=criticality_score,
         manufacturer_applicable=manufacturer_applicable,
+        manufacturer_part_number_applicable=manufacturer_applicable,
     )
     return breakdown, text_cos
 
@@ -215,6 +259,7 @@ def _build_evidence(material: CPSEMaterial, candidate: CPSEMaterial, breakdown: 
         "uom": _field("uom", material.uom, candidate.uom, breakdown.uom_score),
         "function": _field("function", material.function, candidate.function, breakdown.function_score),
         "manufacturer": _field("manufacturer", material.manufacturer, candidate.manufacturer, breakdown.manufacturer_score),
+        "manufacturer_part_number": _field("manufacturer_part_number", material.manufacturer_part_number, candidate.manufacturer_part_number, breakdown.manufacturer_part_number_score),
     }
 
 
@@ -288,6 +333,8 @@ def _handle_decision(
             standardized_uom=material.normalized_uom or material.uom,
             standard=_standardized_field(material, best_candidate, "standard"),
             function=_standardized_field(material, best_candidate, "function"),
+            manufacturer=_standardized_field(material, best_candidate, "manufacturer"),
+            manufacturer_part_number=_standardized_field(material, best_candidate, "manufacturer_part_number"),
             criticality=_standardized_field(material, best_candidate, "criticality") or "UNSPECIFIED",
             confidence=breakdown.final_score,
         )
@@ -413,7 +460,7 @@ def _handle_decision(
             analyze_material(db, best_candidate.id)
 
 
-def analyze_material(db: Session, material_id: uuid.UUID) -> AIAnalysis:
+def analyze_material(db: Session, material_id: uuid.UUID, target_company_ids: list[uuid.UUID] | None = None) -> AIAnalysis:
     material = db.query(CPSEMaterial).filter(CPSEMaterial.id == material_id).first()
     if not material:
         raise ValueError(f"CPSEMaterial {material_id} not found")
@@ -423,7 +470,7 @@ def analyze_material(db: Session, material_id: uuid.UUID) -> AIAnalysis:
 
     try:
         embedding = ensure_embeddings(db, material)
-        candidates = find_candidate_materials(db, material)
+        candidates = find_candidate_materials(db, material, target_company_ids=target_company_ids)
         attrs_a = _attributes_dict(db, material.id)
 
         db.query(MaterialMatch).filter(MaterialMatch.material_id == material.id).delete()
@@ -451,7 +498,8 @@ def analyze_material(db: Session, material_id: uuid.UUID) -> AIAnalysis:
             best_candidate, best_breakdown = None, compute_final_score(
                 description_score=0, specification_score=0, classification_score=0, uom_score=0,
                 attribute_score=0, grade_score=0, dimension_score=0, standard_score=0,
-                manufacturer_score=0, function_score=0, criticality_score=0, manufacturer_applicable=False,
+                manufacturer_score=0, manufacturer_part_number_score=0, function_score=0, criticality_score=0, 
+                manufacturer_applicable=False, manufacturer_part_number_applicable=False
             )
 
         decision_breakdown, ml_result = blend_scores(best_breakdown)
@@ -523,6 +571,7 @@ def analyze_material(db: Session, material_id: uuid.UUID) -> AIAnalysis:
             dimension_score=0,
             standard_score=0,
             manufacturer_score=0,
+            manufacturer_part_number_score=0,
             function_score=0,
             criticality_score=0,
             decision=MatchDecision.NOT_EQUIVALENT.value,

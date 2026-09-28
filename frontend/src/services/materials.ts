@@ -1,5 +1,5 @@
 import { api } from "@/services/api";
-import type { CPSEMaterial, CPSEMaterialDetail, MaterialListResponse } from "@/types";
+import type { CPSEMaterial, CPSEMaterialDetail, MaterialListResponse, MaterialPrecheckRequest, MaterialPrecheckResponse } from "@/types";
 
 export interface MaterialListParams {
   cpse_id?: string;
@@ -28,5 +28,10 @@ export async function searchMaterials(q: string) {
 
 export async function findSimilarMaterials(materialId: string) {
   const { data } = await api.get<CPSEMaterial[]>(`/cpse-materials/${materialId}/similar`);
+  return data;
+}
+
+export async function precheckMaterial(payload: MaterialPrecheckRequest) {
+  const { data } = await api.post<MaterialPrecheckResponse>("/cpse-materials/precheck", payload);
   return data;
 }

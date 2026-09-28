@@ -9,8 +9,9 @@ from app.db.session import get_db
 from app.models.enums import MappingDecisionStatus
 from app.models.material import CPSEMaterial, MaterialAttribute, MaterialEmbedding
 from app.models.user import User
-from app.schemas.material import CPSEMaterialDetailOut, CPSEMaterialOut, MaterialListResponse
-from app.services import normalization
+from app.schemas.material import CPSEMaterialDetailOut, CPSEMaterialOut, MaterialListResponse, MaterialPrecheckRequest, MaterialPrecheckResponse, PrecheckCandidate
+from app.services import normalization, readiness_service
+from app.ai.analyzer import evaluate_candidates
 
 router = APIRouter(prefix="/cpse-materials", tags=["CPSE Materials"])
 
@@ -142,3 +143,83 @@ def similar_materials(
     if not material.embedding:
         return []
     return find_candidate_materials(db, material, limit=limit)
+
+@router.post("/precheck", response_model=MaterialPrecheckResponse)
+def precheck_material(
+    payload: MaterialPrecheckRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.ai.text_embeddings import generate_text_embedding
+    
+    # Score readiness
+    material_dict = {
+        "original_description": payload.description,
+        "uom": payload.uom,
+        "classification": payload.classification,
+        "technical_specification": payload.specification,
+        "manufacturer": payload.manufacturer,
+        "manufacturer_part_number": payload.manufacturer_part_number,
+        "attributes_json": payload.attributes_json
+    }
+    readiness_scores = readiness_service.score_material_readiness(material_dict)
+    
+    # We need a transient CPSEMaterial to pass into similarity/analyzer
+    transient_material = CPSEMaterial(
+        id=uuid.uuid4(),
+        cpse_id=current_user.cpse_id,
+        original_description=payload.description,
+        normalized_description=normalization.normalize_description(payload.description),
+        technical_specification=payload.specification,
+        uom=payload.uom,
+        classification=payload.classification,
+        normalized_classification=normalization.normalize_classification(payload.classification) if payload.classification else None,
+        manufacturer=payload.manufacturer,
+        manufacturer_part_number=payload.manufacturer_part_number,
+        criticality="UNSPECIFIED",
+    )
+    
+    query_vector, _ = generate_text_embedding(transient_material.normalized_description)
+    transient_material.embedding = MaterialEmbedding(text_embedding=query_vector)
+    
+    from app.ai.similarity import find_candidate_materials
+    candidates = find_candidate_materials(db, transient_material, limit=5, target_company_ids=[current_user.cpse_id] if current_user.cpse_id else None)
+    
+    result_candidates = []
+    if candidates:
+        analysis_result = evaluate_candidates(db, transient_material, candidates)
+        best_candidate = analysis_result.best_candidate
+        
+        for cand in candidates:
+            # We don't have the exact score for all candidates from evaluate_candidates, just the best one,
+            # but for precheck we can just return the best candidate
+            pass
+            
+        if best_candidate:
+            common_code = None
+            if best_candidate.mappings:
+                for mapping in best_candidate.mappings:
+                    if mapping.decision_status in ("APPROVED", "EDITED_AND_APPROVED"):
+                        common_code = mapping.common_material.common_code
+                        break
+                        
+            result_candidates.append(PrecheckCandidate(
+                material_id=best_candidate.id,
+                common_code=common_code,
+                description=best_candidate.original_description,
+                score=analysis_result.final_score,
+                decision=analysis_result.decision
+            ))
+            
+    missing_critical = []
+    if not payload.uom:
+        missing_critical.append("uom")
+    if not payload.classification:
+        missing_critical.append("classification")
+        
+    return MaterialPrecheckResponse(
+        readiness_score=readiness_scores.get("readiness_score", 0.0),
+        missing_critical_fields=missing_critical,
+        candidates=result_candidates
+    )
+

@@ -65,7 +65,7 @@ export default function MaterialAnalysis() {
 
       {isLoading && !analysis && (
         <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-10 text-slate-500">
+          <CardContent className="flex flex-col items-center gap-2 py-10 text-slate-500 dark:text-slate-400">
             <RefreshCcw className="h-6 w-6 animate-spin text-brand-500" />
             <p className="text-sm">AI is analyzing this material (embeddings, pgvector search, scoring)...</p>
           </CardContent>
@@ -76,7 +76,7 @@ export default function MaterialAnalysis() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <AlertTriangle className="h-6 w-6 text-warning-500" />
-            <p className="text-sm text-slate-600">AI analysis has not run for this material yet.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">AI analysis has not run for this material yet.</p>
             <Button onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending}>
               {retryMutation.isPending ? "Queuing..." : "Run AI Analysis"}
             </Button>
@@ -88,7 +88,7 @@ export default function MaterialAnalysis() {
         <Card className="border-danger-200">
           <CardContent className="space-y-3 py-6">
             <p className="font-semibold text-danger-600">AI analysis could not determine a reliable match.</p>
-            <p className="text-sm text-slate-600">Reason: {analysis.failure_reason || "Insufficient description or specification data."}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Reason: {analysis.failure_reason || "Insufficient description or specification data."}</p>
             <Button onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending}>
               Retry AI Analysis
             </Button>
@@ -111,13 +111,13 @@ export default function MaterialAnalysis() {
                   <Link
                     key={candidate.material.id}
                     to={`/materials/${candidate.material.id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 p-3 hover:border-brand-200 hover:bg-brand-50/40"
+                    className="flex items-center justify-between rounded-lg border border-slate-100 dark:border-navy-800 p-3 hover:border-brand-200 hover:bg-brand-50/40"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                         Candidate {index + 1}: {candidate.material.original_material_code}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {candidate.material.original_description} &middot; {candidate.material.cpse.code}
                       </p>
                     </div>
@@ -139,19 +139,20 @@ export default function MaterialAnalysis() {
               <ScoreBar label="Grade Match" value={analysis.grade_score} />
               <ScoreBar label="Dimension Match" value={analysis.dimension_score} />
               <ScoreBar label="Standard Match" value={analysis.standard_score} />
+              <ScoreBar label="Manufacturer Match" value={analysis.manufacturer_score} />
               <ScoreBar label="UOM Match" value={analysis.uom_score} />
               <ScoreBar label="Function Match" value={analysis.function_score} />
 
-              <div className="rounded-lg bg-slate-50 p-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-navy-900 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Final Confidence</p>
-                <p className="text-3xl font-bold text-slate-900">{analysis.final_score.toFixed(1)}%</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{analysis.final_score.toFixed(1)}%</p>
                 {analysis.ml_status === "TRAINED" && analysis.ml_probability != null && (
                   <p className="mt-1 text-xs text-slate-400">XGBoost probability: {analysis.ml_probability.toFixed(1)}%</p>
                 )}
               </div>
 
               {analysis.reason_text && (
-                <div className="rounded-lg border border-brand-100 bg-brand-50/50 p-3 text-sm text-slate-700">
+                <div className="rounded-lg border border-brand-100 bg-brand-50/50 p-3 text-sm text-slate-700 dark:text-slate-300">
                   <span className="font-semibold">Reason: </span>
                   {analysis.reason_text}
                 </div>
@@ -184,8 +185,8 @@ export default function MaterialAnalysis() {
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger-600" />
                 <div>
                   <p className="text-sm font-bold text-danger-700">Technical Conflict Detected</p>
-                  <p className="text-xs text-slate-600">Reason: {analysis.conflict_reason}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Reason: {analysis.conflict_reason}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     This pair is routed for mandatory human validation and will never be auto-harmonized, regardless
                     of similarity score.
                   </p>
@@ -202,13 +203,13 @@ export default function MaterialAnalysis() {
                   {meta.label}
                 </div>
               )}
-              {meta && <p className="max-w-md text-sm text-slate-600">{meta.description}</p>}
+              {meta && <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{meta.description}</p>}
 
               {analysis.recommended_common_code && (
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Common National Material Code</p>
                   <p className="text-2xl font-bold text-brand-600">{analysis.recommended_common_code}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     A Material Expert must validate this mapping in the Approval queue before it becomes official.
                   </p>
                 </div>
@@ -225,7 +226,7 @@ function Info({ label, value, span }: { label: string; value?: string | null; sp
   return (
     <div className={span ? "col-span-2 md:col-span-3" : undefined}>
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="font-medium text-slate-800">{value || "Missing attribute"}</p>
+      <p className="font-medium text-slate-800 dark:text-slate-200">{value || "Missing attribute"}</p>
     </div>
   );
 }

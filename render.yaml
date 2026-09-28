@@ -1,0 +1,133 @@
+databases:
+  # ----------------------------------------------------
+  # PostgreSQL Database
+  # ----------------------------------------------------
+  - name: mh_postgres
+    databaseName: material_harmonization
+    user: material_admin
+    plan: starter # Change to free if needed
+
+services:
+  # ----------------------------------------------------
+  # Redis (Celery Broker & Result Backend)
+  # ----------------------------------------------------
+  - type: redis
+    name: mh_redis
+    plan: starter # Change to free if needed
+
+  # ----------------------------------------------------
+  # FastAPI Backend (Web Service)
+  # ----------------------------------------------------
+  - type: web
+    name: mh_backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    preDeployCommand: "cd backend && alembic upgrade head"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mh_postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CORS_ORIGINS
+        # Needs to be explicitly populated in Render Dashboard to the Frontend URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # ----------------------------------------------------
+  # Celery Worker (Background Worker)
+  # ----------------------------------------------------
+  - type: worker
+    name: mh_worker
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && celery -A app.workers.celery_app worker --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mh_postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # ----------------------------------------------------
+  # Celery Beat (Background Worker)
+  # ----------------------------------------------------
+  - type: worker
+    name: mh_beat
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && celery -A app.workers.celery_app beat --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mh_postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: mh_redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # ----------------------------------------------------
+  # React Frontend (Static Site)
+  # ----------------------------------------------------
+  - type: web
+    name: mh_frontend
+    env: static
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: "./frontend/dist"
+    # Route all unmatched routes to index.html for React Router
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: mh_backend
+          envVarKey: RENDER_EXTERNAL_URL

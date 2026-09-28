@@ -18,11 +18,11 @@ export function ScoreBar({ label, value, weight }: ScoreBarProps) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-sm">
-        <span className="font-medium text-slate-700">
+        <span className="font-medium text-slate-700 dark:text-slate-300">
           {label}
           {weight !== undefined && <span className="ml-1 text-xs text-slate-400">({Math.round(weight * 100)}% weight)</span>}
         </span>
-        <span className="font-semibold text-slate-900">{value.toFixed(1)}%</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100">{value.toFixed(1)}%</span>
       </div>
       <Progress value={value} indicatorClassName={cn(colorFor(value))} />
     </div>

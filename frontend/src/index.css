@@ -12,7 +12,7 @@ html {
 
 @layer base {
   body {
-    @apply bg-slate-100 text-slate-900 antialiased font-sans;
+    @apply bg-slate-100 text-slate-900 antialiased font-sans dark:bg-navy-950 dark:text-slate-100;
   }
 }
 

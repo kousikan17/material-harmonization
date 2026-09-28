@@ -21,8 +21,8 @@ export default function ProcurementAnalytics() {
 
       {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
       {!isLoading && (data ?? []).length === 0 && (
-        <div className="rounded border border-slate-200 bg-slate-50 p-10 text-center">
-          <p className="text-sm font-medium text-slate-600">
+        <div className="rounded border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 p-10 text-center">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
             No procurement history is available yet to compute aggregation opportunities.
           </p>
         </div>
@@ -36,20 +36,20 @@ export default function ProcurementAnalytics() {
               {opp.includes_demo_data && <Badge variant="warning">Includes Demo Data</Badge>}
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-slate-600">{opp.standardized_description}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">{opp.standardized_description}</p>
               <div className="space-y-1.5">
                 {opp.cpse_demand.map((d) => (
                   <div key={d.cpse_code} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-700">{d.cpse_name} ({d.cpse_code})</span>
+                    <span className="text-slate-700 dark:text-slate-300">{d.cpse_name} ({d.cpse_code})</span>
                     <span className="font-semibold tabular-nums">
                       {d.total_quantity.toLocaleString()} {d.uom}
                     </span>
                   </div>
                 ))}
               </div>
-              <div className="rounded bg-slate-50 p-3">
+              <div className="rounded bg-slate-50 dark:bg-navy-900 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Total Potential Aggregated Demand</p>
-                <p className="text-xl font-bold text-slate-900">
+                <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   {opp.total_potential_aggregated_demand.toLocaleString()} {opp.uom}
                 </p>
               </div>

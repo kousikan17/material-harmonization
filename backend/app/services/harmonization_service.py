@@ -29,6 +29,12 @@ def approve_mapping(db, mapping: CommonMaterialMapping, actor: User, remarks: st
 
     mapping.approved_at = datetime.now(timezone.utc)
     mapping.cpse_material.status = MaterialStatus.HARMONIZED.value
+    
+    # Mark CommonMaterial as curated (approved)
+    mapping.common_material.approved_by = actor.id
+    mapping.common_material.approved_at = datetime.now(timezone.utc)
+    mapping.common_material.status = "ACTIVE"
+    
     db.add(ApprovalAction(mapping_id=mapping.id, action=ApprovalActionType.APPROVE.value, actor_id=actor.id, remarks=remarks))
     db.commit()
 
@@ -103,6 +109,12 @@ def edit_and_approve_mapping(
 
     mapping.approved_at = datetime.now(timezone.utc)
     mapping.cpse_material.status = MaterialStatus.HARMONIZED.value
+
+    # Mark CommonMaterial as curated (approved)
+    mapping.common_material.approved_by = actor.id
+    mapping.common_material.approved_at = datetime.now(timezone.utc)
+    mapping.common_material.status = "ACTIVE"
+
     db.add(
         ApprovalAction(mapping_id=mapping.id, action=ApprovalActionType.EDIT_AND_APPROVE.value, actor_id=actor.id, remarks=remarks)
     )

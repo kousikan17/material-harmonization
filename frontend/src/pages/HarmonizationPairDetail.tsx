@@ -26,7 +26,7 @@ export default function HarmonizationPairDetail() {
     return (
       <div className="space-y-4">
         <PageHeader breadcrumbs={[{ label: "Harmonization" }, { label: "Not Found" }]} title="Mapping Not Found" />
-        <p className="text-sm text-slate-500">This mapping could not be found.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">This mapping could not be found.</p>
       </div>
     );
   }
@@ -66,9 +66,9 @@ export default function HarmonizationPairDetail() {
           {pair.sbert_similarity != null && <ScoreBar label="SBERT similarity" value={pair.sbert_similarity} />}
           {pair.ml_probability != null && <ScoreBar label={`XGBoost probability (${pair.ml_status})`} value={pair.ml_probability} />}
 
-          <div className="rounded-lg bg-slate-50 p-4">
+          <div className="rounded-lg bg-slate-50 dark:bg-navy-900 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Confidence</p>
-            <p className="text-3xl font-bold text-slate-900">
+            <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
               {pair.confidence_score != null ? `${pair.confidence_score.toFixed(1)}%` : "Not available"}
             </p>
           </div>
@@ -129,7 +129,7 @@ function Field({ label, value }: { label: string; value?: string | ReactNode | n
   return (
     <div>
       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="font-medium text-slate-800">{value || "Missing attribute"}</p>
+      <p className="font-medium text-slate-800 dark:text-slate-200">{value || "Missing attribute"}</p>
     </div>
   );
 }

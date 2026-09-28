@@ -12,6 +12,15 @@ class CsvRowIssue(BaseModel):
     original_material_code: Optional[str] = None
 
 
+class CpseDistributionItem(BaseModel):
+    """Per-CPSE material count in a bulk validation result."""
+    cpse_code: str
+    cpse_name: str
+    sector_name: Optional[str] = None
+    cognate_group_name: Optional[str] = None
+    material_count: int
+
+
 class CsvValidationResponse(BaseModel):
     """Preview-only result of /demo-import/validate - nothing is written to
     the database by this call."""
@@ -24,6 +33,9 @@ class CsvValidationResponse(BaseModel):
     file_errors: list[str]
     invalid_rows: list[CsvRowIssue]
     preview: list[dict]
+    normalizations: dict[str, str] = {}
+    distribution: list[CpseDistributionItem] = []
+
 
 
 class CsvImportRowResult(BaseModel):
@@ -53,6 +65,9 @@ class CsvImportResponse(BaseModel):
 class CsvImportHistoryItem(BaseModel):
     batch_id: uuid.UUID
     filename: str
+    filenames: list[str] = []
+    cpse_codes: list[str] = []
+    file_count: int = 1
     imported_at: datetime
     actor_name: str
     total_rows: int

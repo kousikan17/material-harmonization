@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text, JSON, Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +30,7 @@ class MaterialMatch(Base, UUIDMixin, TimestampMixin):
     dimension_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     standard_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     manufacturer_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    manufacturer_part_number_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     function_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     criticality_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     vector_distance: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -60,6 +61,7 @@ class AIAnalysis(Base, UUIDMixin, TimestampMixin):
     dimension_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     standard_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     manufacturer_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    manufacturer_part_number_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     function_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     criticality_score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
 
@@ -78,3 +80,14 @@ class AIAnalysis(Base, UUIDMixin, TimestampMixin):
 
     material: Mapped["CPSEMaterial"] = relationship(foreign_keys=[material_id])
     best_candidate: Mapped[Optional["CPSEMaterial"]] = relationship(foreign_keys=[best_candidate_material_id])
+
+class AnalysisJob(Base, UUIDMixin, TimestampMixin):
+    """Tracks asynchronous bulk analysis operations."""
+
+    __tablename__ = "analysis_jobs"
+
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="queued")
+    company_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    total_materials: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    processed_materials: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completed_at = mapped_column(DateTime(timezone=True), nullable=True)

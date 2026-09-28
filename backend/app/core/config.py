@@ -7,13 +7,22 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "One Nation - One Common Material Code"
 
-    DATABASE_URL: str = "postgresql+psycopg://material_admin:postgres@postgres:5432/material_harmonization"
+    DATABASE_URL: str
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return url
 
     REDIS_URL: str = "redis://redis:6379/0"
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
 
-    JWT_SECRET_KEY: str = "CHANGE_ME_super_secret_key_for_dev_only"
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
@@ -58,7 +67,7 @@ class Settings(BaseSettings):
     # post-sync harmonization pass to finish (see app.connectors.sync_engine).
     SOURCE_SYNC_SETTLE_TIMEOUT_SECONDS: int = 120
 
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    CORS_ORIGINS: str
 
     @property
     def cors_origins_list(self) -> list[str]:
