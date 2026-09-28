@@ -6,14 +6,16 @@ databases:
     databaseName: material_harmonization
     user: material_admin
     plan: starter # Change to free if needed
+    ipAllowList: [] # Restrict to internal Render connections
 
 services:
   # ----------------------------------------------------
   # Redis (Celery Broker & Result Backend)
   # ----------------------------------------------------
-  - type: redis
+  - type: keyvalue
     name: mh_redis
     plan: starter # Change to free if needed
+    ipAllowList: [] # Restrict to internal Render connections
 
   # ----------------------------------------------------
   # FastAPI Backend (Web Service)
@@ -117,7 +119,7 @@ services:
   # ----------------------------------------------------
   - type: web
     name: mh_frontend
-    env: static
+    runtime: static
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: "./frontend/dist"
     # Route all unmatched routes to index.html for React Router
