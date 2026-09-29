@@ -69,6 +69,15 @@ def get_or_create_users(db, roles: dict[str, Role]) -> dict[str, User]:
 
 def main() -> None:
     Base.metadata.create_all(bind=engine)  # safety net if migrations haven't run yet
+    
+    # Safe manual schema sync for Render environment
+    with engine.begin() as conn:
+        from sqlalchemy import text
+        try:
+            conn.execute(text("ALTER TABLE cpse_materials ADD COLUMN IF NOT EXISTS import_batch_id UUID;"))
+        except Exception as e:
+            logger.warning(f"Error executing schema fix: {e}")
+
     db = SessionLocal()
     try:
         ensure_sequence(db)
