@@ -14,7 +14,7 @@ services:
   # ----------------------------------------------------
   - type: keyvalue
     name: mh_redis
-    plan: starter # Change to free if needed
+    plan: free
     ipAllowList: [] # Restrict to internal Render connections
 
   # ----------------------------------------------------
@@ -23,9 +23,10 @@ services:
   - type: web
     name: mh_backend
     runtime: python
+    plan: free
     buildCommand: "cd backend && pip install -r requirements.txt"
     preDeployCommand: "cd backend && alembic upgrade head"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: "cd backend && chmod +x start_render.sh && ./start_render.sh"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -49,68 +50,6 @@ services:
       - key: CORS_ORIGINS
         # Needs to be explicitly populated in Render Dashboard to the Frontend URL
         sync: false
-      - key: JWT_SECRET_KEY
-        generateValue: true
-
-  # ----------------------------------------------------
-  # Celery Worker (Background Worker)
-  # ----------------------------------------------------
-  - type: worker
-    name: mh_worker
-    runtime: python
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && celery -A app.workers.celery_app worker --loglevel=info"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: mh_postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
-      - key: JWT_SECRET_KEY
-        generateValue: true
-
-  # ----------------------------------------------------
-  # Celery Beat (Background Worker)
-  # ----------------------------------------------------
-  - type: worker
-    name: mh_beat
-    runtime: python
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && celery -A app.workers.celery_app beat --loglevel=info"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: mh_postgres
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: keyvalue
-          name: mh_redis
-          property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
 
