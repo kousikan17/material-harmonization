@@ -628,6 +628,8 @@ export interface DataReadinessDashboard {
     low: number;
   };
   missing_fields: {
+    original_material_code: number;
+    original_description: number;
     uom: number;
     classification: number;
     technical_specification: number;

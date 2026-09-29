@@ -34,6 +34,7 @@ SQLAlchemy ORM exclusively.
 """
 import csv
 import io
+import re
 import uuid
 from dataclasses import dataclass, field
 
@@ -73,7 +74,7 @@ OPTIONAL_DEMAND_COLUMNS = (
     "currency",
 )
 _ALLOWED_COLUMNS = REQUIRED_COLUMNS + OPTIONAL_MATERIAL_COLUMNS + OPTIONAL_DEMAND_COLUMNS
-_REQUIRED_NON_EMPTY = ("original_material_code", "original_description", "material_type", "uom")
+_REQUIRED_NON_EMPTY = ("original_material_code", "original_description", "uom")
 _VALID_CRITICALITY = {c.value for c in Criticality}
 
 _CRITICALITY_MAP = {
@@ -145,11 +146,34 @@ def _decode(raw_bytes: bytes) -> str:
         raise CsvImportError("File is not valid UTF-8 text. Please export the CSV as UTF-8.") from exc
 
 
+def _normalize_header(header: str) -> str:
+    h = re.sub(r"[^a-z0-9]+", "_", str(header).strip().lower()).strip("_")
+    mapping = {
+        "material_code": "original_material_code",
+        "item_code": "original_material_code",
+        "code": "original_material_code",
+        "description": "original_description",
+        "item_description": "original_description",
+        "desc": "original_description",
+        "unit": "uom",
+        "unit_of_measure": "uom",
+        "manufacturer_part_no": "manufacturer_part_number",
+        "part_number": "manufacturer_part_number",
+        "part_no": "manufacturer_part_number",
+        "mpn": "manufacturer_part_number",
+        "qty": "quantity",
+        "spec": "technical_specification",
+        "specification": "technical_specification",
+        "class": "classification",
+    }
+    return mapping.get(h, h)
+
+
 def _parse_csv_rows(raw_bytes: bytes) -> tuple[list[str], list[dict]]:
     text = _decode(raw_bytes)
     reader = csv.DictReader(io.StringIO(text))
     raw_fieldnames = reader.fieldnames or []
-    fieldnames = [f.strip().lower().replace(" ", "_") for f in raw_fieldnames]
+    fieldnames = [_normalize_header(f) for f in raw_fieldnames]
     reader.fieldnames = fieldnames
     return fieldnames, list(reader)
 
@@ -170,7 +194,7 @@ def _parse_xlsx_rows(raw_bytes: bytes) -> tuple[list[str], list[dict]]:
     header = next(rows_iter, None)
     if header is None:
         raise CsvImportError("Excel file is empty.")
-    fieldnames = [str(cell).strip().lower().replace(" ", "_") if cell is not None else "" for cell in header]
+    fieldnames = [_normalize_header(cell) if cell is not None else "" for cell in header]
 
     dict_rows: list[dict] = []
     for row in rows_iter:
@@ -350,9 +374,12 @@ def validate_material_file(
         raise CsvImportError("File is empty.")
 
     fieldnames, raw_rows = _parse_rows(filename, raw_bytes)
-    required_cols = list(REQUIRED_COLUMNS)
-    if allowed_cpse_ids and len(allowed_cpse_ids) == 1:
-        required_cols.remove("cpse_code")
+    # Only these fields are intrinsically required for a material record.
+    # The remaining legacy/template columns are valid optional attributes and
+    # remain accepted when present, preserving their business validation.
+    required_cols = ["original_material_code", "original_description", "uom"]
+    if not (allowed_cpse_ids and len(allowed_cpse_ids) == 1):
+        required_cols.insert(0, "cpse_code")
 
     missing = [c for c in required_cols if c not in fieldnames]
     if missing:

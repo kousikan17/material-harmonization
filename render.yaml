@@ -52,6 +52,8 @@ services:
         value: "https://mh-frontend-ox94.onrender.com"
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: DEMO_MODE
+        value: "true"
 
   # ----------------------------------------------------
   # React Frontend (Static Site)
@@ -69,3 +71,5 @@ services:
     envVars:
       - key: VITE_API_URL
         value: "https://mh-backend-hvic.onrender.com/api"
+      - key: VITE_DEMO_MODE
+        value: "true"

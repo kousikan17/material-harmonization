@@ -34,7 +34,7 @@ def get_readiness_dashboard(db: Session = Depends(get_db), current_user: User = 
             }
         }
     
-    avg_score = db.query(func.avg(CPSEMaterial.overall_readiness_score)).scalar() or 0
+    avg_score = db.query(func.avg(CPSEMaterial.overall_readiness_score)).scalar()
     
     high = db.query(CPSEMaterial).filter(CPSEMaterial.overall_readiness_score >= 80).count()
     medium = db.query(CPSEMaterial).filter(CPSEMaterial.overall_readiness_score >= 50, CPSEMaterial.overall_readiness_score < 80).count()
@@ -47,13 +47,15 @@ def get_readiness_dashboard(db: Session = Depends(get_db), current_user: User = 
     
     return {
         "total_materials": total_materials,
-        "average_readiness_score": round(avg_score, 2),
+        "average_readiness_score": round(float(avg_score or 0), 2),
         "materials_by_readiness_tier": {
             "high": high,
             "medium": medium,
             "low": low
         },
         "missing_fields": {
+            "original_material_code": db.query(CPSEMaterial).filter(CPSEMaterial.original_material_code.is_(None)).count(),
+            "original_description": db.query(CPSEMaterial).filter(CPSEMaterial.original_description.is_(None)).count(),
             "uom": missing_uom,
             "classification": missing_class,
             "technical_specification": missing_spec,

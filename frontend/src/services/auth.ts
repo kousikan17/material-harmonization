@@ -25,6 +25,11 @@ export async function register(payload: RegisterPayload) {
   return data;
 }
 
+export async function demoLogin() {
+  const { data } = await api.post<{ access_token: string; user: User }>("/auth/demo-login");
+  return data;
+}
+
 export async function fetchMe(signal?: AbortSignal) {
   const { data } = await api.get<User>("/auth/me", { signal });
   return data;

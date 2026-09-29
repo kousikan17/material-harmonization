@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.models.cpse import CPSE
 from app.models.user import Role, User
 from app.schemas.user import LoginRequest, TokenResponse, UserCreate, UserOut
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -49,6 +50,19 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has been deactivated")
+
+    token = create_access_token(subject=str(user.id), extra_claims={"role": user.role.name})
+    return TokenResponse(access_token=token, user=user)
+
+
+@router.post("/demo-login", response_model=TokenResponse)
+def demo_login(db: Session = Depends(get_db)):
+    if not settings.DEMO_MODE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo mode is not enabled")
+
+    user = db.query(User).filter(User.username == "admin").first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Demo admin user not found")
 
     token = create_access_token(subject=str(user.id), extra_claims={"role": user.role.name})
     return TokenResponse(access_token=token, user=user)

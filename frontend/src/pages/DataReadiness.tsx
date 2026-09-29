@@ -10,14 +10,15 @@ export default function DataReadiness() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dataReadinessService.getDashboard().then((res) => {
-      setData(res);
-      setLoading(false);
-    });
+    dataReadinessService
+      .getDashboard()
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div>Loading Data Readiness...</div>;
-  if (!data) return <div>Failed to load data.</div>;
+  if (!data) return <div>Unable to load data readiness data. Please try again.</div>;
 
   return (
     <div className="space-y-6">
@@ -76,8 +77,12 @@ export default function DataReadiness() {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Missing UOM</span>
-                <span className="font-bold">{data.missing_fields.uom.toLocaleString()}</span>
+                <span>Missing Material Code</span>
+                <span className="font-bold">{data.missing_fields.original_material_code.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Missing Description</span>
+                <span className="font-bold">{data.missing_fields.original_description.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Missing Classification</span>
@@ -86,6 +91,10 @@ export default function DataReadiness() {
               <div className="flex justify-between">
                 <span>Missing Technical Spec</span>
                 <span className="font-bold">{data.missing_fields.technical_specification.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Missing UOM</span>
+                <span className="font-bold">{data.missing_fields.uom.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Missing MPN</span>

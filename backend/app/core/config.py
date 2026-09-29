@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "One Nation - One Common Material Code"
 
+    DEMO_MODE: bool = False
     DATABASE_URL: str
 
     @property

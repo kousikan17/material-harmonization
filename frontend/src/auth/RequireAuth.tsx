@@ -12,6 +12,11 @@ export function RequireAuth({ children, roles }: { children: React.ReactNode; ro
     return <div className="flex h-screen items-center justify-center text-slate-400">Loading...</div>;
   }
   if (!user) {
+    // Demo mode keeps the application shell available if session bootstrap
+    // is temporarily unavailable; API calls remain protected.
+    if (import.meta.env.VITE_DEMO_MODE === "true") {
+      return <>{children}</>;
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (roles && !roles.includes(user.role.name)) {

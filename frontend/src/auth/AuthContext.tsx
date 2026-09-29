@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { fetchMe, login as loginRequest, type LoginPayload } from "@/services/auth";
+import { demoLogin, fetchMe, login as loginRequest, type LoginPayload } from "@/services/auth";
 import type { User } from "@/types";
 
 interface AuthContextValue {
@@ -21,7 +21,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const token = localStorage.getItem("access_token");
-    if (!token) {
+    const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+
+    if (!token && !isDemoMode) {
       setIsLoading(false);
       return;
     }
@@ -29,20 +31,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
-    fetchMe(controller.signal)
-      .then((me) => {
-        setUser(me);
-        localStorage.setItem("current_user", JSON.stringify(me));
-      })
-      .catch(() => {
+    const initAuth = async () => {
+      try {
+        if (!token && isDemoMode) {
+          const { access_token, user: loggedInUser } = await demoLogin();
+          localStorage.setItem("access_token", access_token);
+          localStorage.setItem("current_user", JSON.stringify(loggedInUser));
+          setUser(loggedInUser);
+        } else {
+          const me = await fetchMe(controller.signal);
+          setUser(me);
+          localStorage.setItem("current_user", JSON.stringify(me));
+        }
+      } catch {
         localStorage.removeItem("access_token");
         localStorage.removeItem("current_user");
-        setUser(null);
-      })
-      .finally(() => {
+        if (isDemoMode) {
+          try {
+            const { access_token, user: loggedInUser } = await demoLogin();
+            localStorage.setItem("access_token", access_token);
+            localStorage.setItem("current_user", JSON.stringify(loggedInUser));
+            setUser(loggedInUser);
+          } catch {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } finally {
         clearTimeout(timeoutId);
         setIsLoading(false);
-      });
+      }
+    };
+
+    initAuth();
+
+
 
     return () => {
       clearTimeout(timeoutId);

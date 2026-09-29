@@ -21,7 +21,8 @@ api.interceptors.response.use(
       localStorage.removeItem("current_user");
       // Don't redirect for /auth/me — AuthContext handles that transition.
       const url = error.config?.url || "";
-      if (!url.includes("/auth/me") && !window.location.pathname.startsWith("/login")) {
+      const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+      if (!isDemoMode && !url.includes("/auth/me") && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
     }
@@ -35,6 +36,9 @@ export function apiErrorMessage(error: unknown, fallback = "Something went wrong
       const detail = error.response.data.detail;
       if (typeof detail === "string") return detail;
       if (Array.isArray(detail)) return detail.map((d) => d.msg).join(", ");
+    }
+    if (error.message === "Network Error") {
+      return "Unable to load data from the server. Please try again.";
     }
     if (error.message) {
       return error.message;
