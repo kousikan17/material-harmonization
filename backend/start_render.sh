@@ -4,6 +4,9 @@ set -e
 echo "Running database migrations..."
 alembic upgrade head
 
+echo "Bootstrapping initial admin user..."
+python -m app.seed
+
 echo "Starting Celery worker with embedded Beat..."
 celery -A app.workers.celery_app worker \
   --beat \
