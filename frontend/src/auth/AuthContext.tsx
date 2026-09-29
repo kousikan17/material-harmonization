@@ -25,7 +25,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       return;
     }
-    fetchMe()
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+    fetchMe(controller.signal)
       .then((me) => {
         setUser(me);
         localStorage.setItem("current_user", JSON.stringify(me));
@@ -35,7 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("current_user");
         setUser(null);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const login = React.useCallback(async (payload: LoginPayload) => {

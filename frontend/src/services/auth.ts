@@ -25,7 +25,7 @@ export async function register(payload: RegisterPayload) {
   return data;
 }
 
-export async function fetchMe() {
-  const { data } = await api.get<User>("/auth/me");
+export async function fetchMe(signal?: AbortSignal) {
+  const { data } = await api.get<User>("/auth/me", { signal });
   return data;
 }
