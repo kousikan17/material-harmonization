@@ -44,5 +44,5 @@ class ImportBatch(Base, UUIDMixin, TimestampMixin):
 
     cpse: Mapped["CPSE"] = relationship()
     user: Mapped["User"] = relationship()
-    materials: Mapped[list["CPSEMaterial"]] = relationship(back_populates="import_batch")
+    # materials: Mapped[list["CPSEMaterial"]] = relationship(back_populates="import_batch")
 
