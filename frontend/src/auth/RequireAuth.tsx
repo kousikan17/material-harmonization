@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthContext";
 import type { RoleName } from "@/types";
 
 export function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: RoleName[] }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, authError } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -15,7 +15,12 @@ export function RequireAuth({ children, roles }: { children: React.ReactNode; ro
     // Demo mode keeps the application shell available if session bootstrap
     // is temporarily unavailable; API calls remain protected.
     if (import.meta.env.VITE_DEMO_MODE === "true") {
-      return <>{children}</>;
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center text-slate-600">
+          <p className="text-lg font-semibold text-slate-800">Application authentication is unavailable</p>
+          <p className="max-w-md text-sm">{authError ?? "Please try again shortly."}</p>
+        </div>
+      );
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

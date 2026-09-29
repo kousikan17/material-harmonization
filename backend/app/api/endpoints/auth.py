@@ -1,4 +1,7 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -10,6 +13,7 @@ from app.schemas.user import LoginRequest, TokenResponse, UserCreate, UserOut
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
@@ -60,7 +64,11 @@ def demo_login(db: Session = Depends(get_db)):
     if not settings.DEMO_MODE:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo mode is not enabled")
 
-    user = db.query(User).filter(User.username == "admin").first()
+    try:
+        user = db.query(User).filter(User.username == "admin").first()
+    except SQLAlchemyError as exc:
+        logger.exception("Demo login database lookup failed")
+        raise HTTPException(status_code=503, detail="Authentication service is temporarily unavailable") from exc
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Demo admin user not found")
 

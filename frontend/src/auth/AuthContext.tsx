@@ -6,6 +6,7 @@ import type { User } from "@/types";
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
+  authError: string | null;
   login: (payload: LoginPayload) => Promise<User>;
   logout: () => void;
 }
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return cached ? (JSON.parse(cached) as User) : null;
   });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [authError, setAuthError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -38,9 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("access_token", access_token);
           localStorage.setItem("current_user", JSON.stringify(loggedInUser));
           setUser(loggedInUser);
+          setAuthError(null);
         } else {
           const me = await fetchMe(controller.signal);
           setUser(me);
+          setAuthError(null);
           localStorage.setItem("current_user", JSON.stringify(me));
         }
       } catch {
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(loggedInUser);
           } catch {
             setUser(null);
+            setAuthError("Demo authentication is unavailable. Please try again shortly.");
           }
         } else {
           setUser(null);
@@ -88,9 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, isLoading, authError, login, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

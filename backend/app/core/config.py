@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     DEMO_MODE: bool = False
     DATABASE_URL: str
+    DB_CONNECT_TIMEOUT_SECONDS: int = 10
+    DB_POOL_TIMEOUT_SECONDS: int = 15
 
     @property
     def sqlalchemy_database_url(self) -> str:
