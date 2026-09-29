@@ -26,7 +26,12 @@ def get_readiness_dashboard(db: Session = Depends(get_db), current_user: User = 
                 "medium": 0,
                 "low": 0
             },
-            "missing_fields": {}
+            "missing_fields": {
+                "uom": 0,
+                "classification": 0,
+                "technical_specification": 0,
+                "manufacturer_part_number": 0
+            }
         }
     
     avg_score = db.query(func.avg(CPSEMaterial.readiness_score)).scalar() or 0

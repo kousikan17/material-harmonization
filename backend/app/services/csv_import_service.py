@@ -55,13 +55,15 @@ REQUIRED_COLUMNS = (
     "technical_specification",
     "uom",
     "manufacturer",
-    "manufacturer_part_number",
     "standard",
     "function",
     "classification",
     "packaging",
     "criticality",
     "quantity",
+)
+OPTIONAL_MATERIAL_COLUMNS = (
+    "manufacturer_part_number",
 )
 OPTIONAL_DEMAND_COLUMNS = (
     "annual_demand_quantity",
@@ -70,7 +72,7 @@ OPTIONAL_DEMAND_COLUMNS = (
     "unit_price",
     "currency",
 )
-_ALLOWED_COLUMNS = REQUIRED_COLUMNS + OPTIONAL_DEMAND_COLUMNS
+_ALLOWED_COLUMNS = REQUIRED_COLUMNS + OPTIONAL_MATERIAL_COLUMNS + OPTIONAL_DEMAND_COLUMNS
 _REQUIRED_NON_EMPTY = ("original_material_code", "original_description", "material_type", "uom")
 _VALID_CRITICALITY = {c.value for c in Criticality}
 
@@ -146,7 +148,9 @@ def _decode(raw_bytes: bytes) -> str:
 def _parse_csv_rows(raw_bytes: bytes) -> tuple[list[str], list[dict]]:
     text = _decode(raw_bytes)
     reader = csv.DictReader(io.StringIO(text))
-    fieldnames = [f.strip() for f in (reader.fieldnames or [])]
+    raw_fieldnames = reader.fieldnames or []
+    fieldnames = [f.strip().lower().replace(" ", "_") for f in raw_fieldnames]
+    reader.fieldnames = fieldnames
     return fieldnames, list(reader)
 
 
@@ -166,7 +170,7 @@ def _parse_xlsx_rows(raw_bytes: bytes) -> tuple[list[str], list[dict]]:
     header = next(rows_iter, None)
     if header is None:
         raise CsvImportError("Excel file is empty.")
-    fieldnames = [str(cell).strip() if cell is not None else "" for cell in header]
+    fieldnames = [str(cell).strip().lower().replace(" ", "_") if cell is not None else "" for cell in header]
 
     dict_rows: list[dict] = []
     for row in rows_iter:
@@ -310,7 +314,7 @@ def build_upload_template_csv(single_company: bool = False) -> str:
         uom="METER", manufacturer="", manufacturer_part_number="", standard="ASTM A106", function="Fluid Transfer", classification="Pipe",
         packaging="", criticality="NORMAL", quantity="",
     )
-    fieldnames = list(REQUIRED_COLUMNS)
+    fieldnames = list(REQUIRED_COLUMNS) + list(OPTIONAL_MATERIAL_COLUMNS)
     if single_company:
         fieldnames.remove("cpse_code")
         del example["cpse_code"]
