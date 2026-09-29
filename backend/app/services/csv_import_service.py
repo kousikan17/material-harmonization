@@ -394,7 +394,7 @@ def validate_material_rows(
 
     for index, raw_row in enumerate(raw_rows):
         line_number = index + 2  # header is row 1, in both CSV and Excel
-        data = {k: (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items() if k in _ALLOWED_COLUMNS}
+        data = {k: (str(v).strip() if v is not None else "") for k, v in raw_row.items() if k in _ALLOWED_COLUMNS}
         result = RowResult(row_number=line_number, raw=data)
 
         for col in _REQUIRED_NON_EMPTY:

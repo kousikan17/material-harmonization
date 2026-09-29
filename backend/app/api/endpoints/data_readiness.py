@@ -34,11 +34,11 @@ def get_readiness_dashboard(db: Session = Depends(get_db), current_user: User = 
             }
         }
     
-    avg_score = db.query(func.avg(CPSEMaterial.readiness_score)).scalar() or 0
+    avg_score = db.query(func.avg(CPSEMaterial.overall_readiness_score)).scalar() or 0
     
-    high = db.query(CPSEMaterial).filter(CPSEMaterial.readiness_score >= 80).count()
-    medium = db.query(CPSEMaterial).filter(CPSEMaterial.readiness_score >= 50, CPSEMaterial.readiness_score < 80).count()
-    low = db.query(CPSEMaterial).filter(CPSEMaterial.readiness_score < 50).count()
+    high = db.query(CPSEMaterial).filter(CPSEMaterial.overall_readiness_score >= 80).count()
+    medium = db.query(CPSEMaterial).filter(CPSEMaterial.overall_readiness_score >= 50, CPSEMaterial.overall_readiness_score < 80).count()
+    low = db.query(CPSEMaterial).filter(CPSEMaterial.overall_readiness_score < 50).count()
     
     missing_uom = db.query(CPSEMaterial).filter(CPSEMaterial.uom.is_(None)).count()
     missing_class = db.query(CPSEMaterial).filter(CPSEMaterial.classification.is_(None)).count()
