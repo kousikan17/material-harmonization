@@ -32,9 +32,17 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logging.getLogger(__name__).error(f"Unhandled server exception: {exc}\n{traceback.format_exc()}")
+    
+    headers = {}
+    origin = request.headers.get("origin")
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error"},
+        content={"detail": f"Internal Server Error: {str(exc)}", "traceback": traceback.format_exc()},
+        headers=headers
     )
 
 

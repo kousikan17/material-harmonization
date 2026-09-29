@@ -628,8 +628,7 @@ def import_valid_rows(
                 commit=False,
             )
             if material is not None:
-                # material.import_batch_id = ib.id
-                pass
+                material.import_batch_id = ib.id
             counts[outcome] += 1
             row_outcome = ImportRowOutcome(
                 row_number=row.row_number,

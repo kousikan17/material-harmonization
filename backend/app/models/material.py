@@ -96,12 +96,12 @@ class CPSEMaterial(Base, UUIDMixin, TimestampMixin):
     sync_history_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sync_history.id"), nullable=True, index=True
     )
-    # import_batch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-    #     UUID(as_uuid=True), ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True, index=True
-    # )
+    import_batch_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     cpse: Mapped["CPSE"] = relationship(back_populates="materials")
-    # import_batch: Mapped[Optional["ImportBatch"]] = relationship(back_populates="materials")
+    import_batch: Mapped[Optional["ImportBatch"]] = relationship(back_populates="materials")
     attributes: Mapped[list["MaterialAttribute"]] = relationship(
         back_populates="material", cascade="all, delete-orphan"
     )
