@@ -49,8 +49,7 @@ services:
           name: mh_redis
           property: connectionString
       - key: CORS_ORIGINS
-        # Needs to be explicitly populated in Render Dashboard to the Frontend URL
-        sync: false
+        value: "https://mh-frontend-ox94.onrender.com"
       - key: JWT_SECRET_KEY
         generateValue: true
 
@@ -69,7 +68,4 @@ services:
         destination: "/index.html"
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: mh_backend
-          envVarKey: RENDER_EXTERNAL_URL
+        value: "https://mh-backend-hvic.onrender.com/api"
