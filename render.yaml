@@ -25,7 +25,6 @@ services:
     runtime: python
     plan: free
     buildCommand: "cd backend && pip install -r requirements.txt"
-    preDeployCommand: "cd backend && alembic upgrade head"
     startCommand: "cd backend && chmod +x start_render.sh && ./start_render.sh"
     envVars:
       - key: DATABASE_URL
